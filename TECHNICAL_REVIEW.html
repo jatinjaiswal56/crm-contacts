@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CRM Contacts - Technical Review Answers</title>
+    <style>
+      :root { color-scheme: light; font-family: system-ui, sans-serif; color: #233149; background: #f5f7fb; }
+      body { max-width: 900px; margin: 0 auto; padding: 32px 20px; line-height: 1.6; }
+      h1, h2 { color: #17233b; line-height: 1.25; }
+      article { margin: 16px 0; padding: 18px 22px; border: 1px solid #e1e6ef; border-radius: 12px; background: white; }
+      article h2 { margin: 0 0 8px; font-size: 1.15rem; }
+      p { margin: 8px 0; }
+      code { padding: 2px 5px; border-radius: 4px; background: #f0f2f7; }
+      .note { color: #5f6b7d; }
+    </style>
+  </head>
+  <body>
+    <h1>CRM Contacts: Technical Review Answers</h1>
+    <p class="note">Concise answers about the implemented architecture, behavior, tests, and current trade-offs.</p>
+
+    <article>
+      <h2>1. Code structure</h2>
+      <p>The directory UI is in <code>ContactsWorkspace</code>; reusable directory reads and async state are in <code>useContactDirectory</code>. Form behavior is isolated in <code>ContactDialog</code>. Route Handlers validate HTTP input, services compose reads, and repositories own database operations.</p>
+    </article>
+    <article>
+      <h2>2. API and server state</h2>
+      <p>Loading, empty, success, and error states are explicit. Superseded reads are cancelled with <code>AbortController</code>, and the last successful results remain visible during background loading. A custom hook is used instead of TanStack Query because the app has one main directory view; the trade-off is no shared cache, retries, or background refetching.</p>
+    </article>
+    <article>
+      <h2>3. Search, filters, and navigation</h2>
+      <p>Search is debounced by 300 ms. Search, company/tag filters, sorting, and pagination are URL-backed. Filter and sort changes reset the page. Directory reads are paginated on the server.</p>
+    </article>
+    <article>
+      <h2>4. Forms and concurrent updates</h2>
+      <p>Formik manages form state and Zod validates fields on both client and server. Unsaved edits are guarded on close and page unload. Contact and tag mutations compare the supplied version with the stored version and increment it on success. A stale write returns HTTP 409 with the latest record; the dialog compares draft and server values and supports accepting latest values or merging only the user's changed fields/tags before retrying.</p>
+    </article>
+    <article>
+      <h2>5. Accessibility and responsive UX</h2>
+      <p>Fields are labelled and connect validation messages with ARIA attributes. The dialog sets and restores focus, traps keyboard focus, and supports Escape. Async feedback uses live status/alert regions. The desktop table becomes contact cards on narrow screens while pagination remains visible.</p>
+    </article>
+    <article>
+      <h2>6. React and code quality</h2>
+      <p>Hooks remain at component top level; fetch effects clean up by aborting requests. Form and query state are controlled, and the directory read logic is not embedded in layout rendering. The implementation avoids global state and additional libraries where the app does not need them.</p>
+    </article>
+    <article>
+      <h2>7. Meaningful tests</h2>
+      <p>Vitest covers API validation, duplicate normalized email/phone values, successful and stale contact updates, stale tag writes, and field/tag merge behavior. Lint and TypeScript checks are also run. Manual browser checks complement automated tests for focus and responsive layout.</p>
+    </article>
+    <article>
+      <h2>8. Performance and maintainability</h2>
+      <p>Server pagination, relevant database indexes, debounce, and request cancellation keep work bounded. Virtualization and prefetching are unnecessary for the current page size. Known gaps include no authentication/authorization, offline queue, real-time updates, tag CRUD, or contact deletion. Bulk tag updates are sequential and can partially succeed.</p>
+    </article>
+  </body>
+</html>
