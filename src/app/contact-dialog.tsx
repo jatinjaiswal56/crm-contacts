@@ -20,6 +20,7 @@ import {
   type ContactWriteFields,
 } from "@/lib/contacts/validation";
 import styles from "./contacts-workspace.module.css";
+import { FormField } from "./form-field";
 
 export type EditableContact = {
   id?: string;
@@ -518,158 +519,74 @@ export function ContactDialog({
           noValidate
         >
           <div className={styles.dialogFields}>
-            <label>
-              <span>
-                First name<span className={styles.requiredMarker} aria-hidden="true">*</span>
-              </span>
-              <input
-                name="firstName"
-                data-dialog-initial-focus
-                value={formik.values.firstName}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                required
-                disabled={saving}
-                maxLength={80}
-                aria-invalid={Boolean(
-                  formik.touched.firstName && formik.errors.firstName,
-                )}
-                aria-describedby={
-                  formik.touched.firstName && formik.errors.firstName
-                    ? "firstName-error"
-                    : undefined
-                }
-              />
-              {formik.touched.firstName && formik.errors.firstName ? (
-                <span className={styles.fieldError} id="firstName-error">
-                  {formik.errors.firstName}
-                </span>
-              ) : null}
-            </label>
-            <label>
-              <span>
-                Last name<span className={styles.requiredMarker} aria-hidden="true">*</span>
-              </span>
-              <input
-                name="lastName"
-                value={formik.values.lastName}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                required
-                disabled={saving}
-                maxLength={80}
-                aria-invalid={Boolean(
-                  formik.touched.lastName && formik.errors.lastName,
-                )}
-                aria-describedby={
-                  formik.touched.lastName && formik.errors.lastName
-                    ? "lastName-error"
-                    : undefined
-                }
-              />
-              {formik.touched.lastName && formik.errors.lastName ? (
-                <span className={styles.fieldError} id="lastName-error">
-                  {formik.errors.lastName}
-                </span>
-              ) : null}
-            </label>
-            <label>
-              <span>
-                Email<span className={styles.requiredMarker} aria-hidden="true">*</span>
-              </span>
-              <input
-                name="email"
-                type="email"
-                value={formik.values.email}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                required
-                disabled={saving}
-                maxLength={254}
-                aria-invalid={Boolean(formik.touched.email && formik.errors.email)}
-                aria-describedby={
-                  formik.touched.email && formik.errors.email
-                    ? "email-error"
-                    : undefined
-                }
-              />
-              {formik.touched.email && formik.errors.email ? (
-                <span className={styles.fieldError} id="email-error">
-                  {formik.errors.email}
-                </span>
-              ) : null}
-            </label>
-            <label>
-              <span>
-                Phone<span className={styles.requiredMarker} aria-hidden="true">*</span>
-              </span>
-              <span
-                className={`${styles.phoneInput} ${
-                  formik.touched.phone && formik.errors.phone
-                    ? styles.invalidPhoneInput
-                    : ""
-                }`}
-              >
-                <span className={styles.phonePrefix} aria-hidden="true">+91</span>
-                <input
-                  name="phone"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel-national"
-                  value={formik.values.phone}
-                  onChange={(event) =>
-                    formik.setFieldValue(
-                      "phone",
-                      event.target.value.replace(/\D/g, "").slice(0, 10),
-                    )
-                  }
-                  onBlur={formik.handleBlur}
-                  required
-                  disabled={saving}
-                  maxLength={10}
-                  pattern="[6-9][0-9]{9}"
-                  aria-label="10-digit Indian mobile number"
-                  aria-invalid={Boolean(formik.touched.phone && formik.errors.phone)}
-                  aria-describedby={
-                    formik.touched.phone && formik.errors.phone
-                      ? "phone-error"
-                      : undefined
-                  }
-                />
-              </span>
-              {formik.touched.phone && formik.errors.phone ? (
-                <span className={styles.fieldError} id="phone-error">
-                  {formik.errors.phone}
-                </span>
-              ) : null}
-            </label>
-            <label className={styles.dialogFullField}>
-              <span>
-                Company<span className={styles.requiredMarker} aria-hidden="true">*</span>
-              </span>
-              <input
-                name="company"
-                value={formik.values.company}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                required
-                disabled={saving}
-                maxLength={120}
-                aria-invalid={Boolean(
-                  formik.touched.company && formik.errors.company,
-                )}
-                aria-describedby={
-                  formik.touched.company && formik.errors.company
-                    ? "company-error"
-                    : undefined
-                }
-              />
-              {formik.touched.company && formik.errors.company ? (
-                <span className={styles.fieldError} id="company-error">
-                  {formik.errors.company}
-                </span>
-              ) : null}
-            </label>
+            <FormField
+              name="firstName"
+              label="First name"
+              value={formik.values.firstName}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={saving}
+              maxLength={80}
+              error={
+                formik.touched.firstName ? formik.errors.firstName : undefined
+              }
+              initialFocus
+            />
+            <FormField
+              name="lastName"
+              label="Last name"
+              value={formik.values.lastName}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={saving}
+              maxLength={80}
+              error={
+                formik.touched.lastName ? formik.errors.lastName : undefined
+              }
+            />
+            <FormField
+              name="email"
+              label="Email"
+              type="email"
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={saving}
+              maxLength={254}
+              error={formik.touched.email ? formik.errors.email : undefined}
+            />
+            <FormField
+              name="phone"
+              label="Phone"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              value={formik.values.phone}
+              onChange={(event) =>
+                formik.setFieldValue(
+                  "phone",
+                  event.target.value.replace(/\D/g, "").slice(0, 10),
+                )
+              }
+              onBlur={formik.handleBlur}
+              disabled={saving}
+              maxLength={10}
+              pattern="[6-9][0-9]{9}"
+              ariaLabel="10-digit Indian mobile number"
+              error={formik.touched.phone ? formik.errors.phone : undefined}
+              prefix="+91"
+            />
+            <FormField
+              name="company"
+              label="Company"
+              value={formik.values.company}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={saving}
+              maxLength={120}
+              error={formik.touched.company ? formik.errors.company : undefined}
+              fullWidth
+            />
           </div>
 
           {formik.submitCount > 0 && validationErrorCount > 0 ? (
