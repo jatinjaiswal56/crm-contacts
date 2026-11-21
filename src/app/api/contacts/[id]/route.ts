@@ -6,6 +6,7 @@ import {
 } from "@/lib/api/responses";
 import { parseJsonBody } from "@/lib/api/request";
 import { getContact } from "@/lib/contacts/service";
+import { toContactWriteValues } from "@/lib/contacts/normalize";
 import { updateContact } from "@/lib/contacts/repository";
 import {
   contactIdSchema,
@@ -53,13 +54,11 @@ export async function PATCH(
   }
 
   try {
-    const result = await updateContact(parsedId.data, parsed.data.expectedVersion, {
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      email: parsed.data.email ?? null,
-      phone: `+91 ${parsed.data.phone}`,
-      company: parsed.data.company ?? null,
-    });
+    const result = await updateContact(
+      parsedId.data,
+      parsed.data.expectedVersion,
+      toContactWriteValues(parsed.data),
+    );
 
     if (result.kind === "missing") {
       return notFoundResponse("Contact");
