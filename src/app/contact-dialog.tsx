@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormik, type FormikErrors, type FormikHelpers } from "formik";
+import { useFormik, type FormikHelpers } from "formik";
 import {
   useCallback,
   useRef,
@@ -14,6 +14,7 @@ import {
   mergeContactTagDraft,
 } from "@/lib/contacts/conflict-merge";
 import { getApiErrorMessage } from "@/lib/api/error-schema";
+import { zodToFormikErrors } from "@/lib/forms/zod-formik";
 import {
   contactWriteFieldsSchema,
   type ContactWriteFields,
@@ -256,32 +257,7 @@ export function ContactDialog({
     validateOnMount: true,
     validateOnBlur: true,
     validateOnChange: true,
-    validate(values) {
-      const parsed = contactWriteFieldsSchema.safeParse(values);
-      if (parsed.success) return {};
-
-      const fieldErrors: FormikErrors<ContactWriteFields> = {};
-      for (const issue of parsed.error.issues) {
-        switch (issue.path[0]) {
-          case "firstName":
-            fieldErrors.firstName ??= issue.message;
-            break;
-          case "lastName":
-            fieldErrors.lastName ??= issue.message;
-            break;
-          case "email":
-            fieldErrors.email ??= issue.message;
-            break;
-          case "phone":
-            fieldErrors.phone ??= issue.message;
-            break;
-          case "company":
-            fieldErrors.company ??= issue.message;
-            break;
-        }
-      }
-      return fieldErrors;
-    },
+    validate: (values) => zodToFormikErrors(contactWriteFieldsSchema, values),
     onSubmit: submitContact,
   });
   const saving = formik.isSubmitting;
@@ -310,7 +286,7 @@ export function ContactDialog({
     onClose,
   });
 
-  function useLatestConflict() {
+  function acceptLatestConflict() {
     if (!conflict) return;
     setBaseContact(conflict.latest);
     setSelectedTagIds(conflict.latest.tags.map((tag) => tag.id));
@@ -481,7 +457,7 @@ export function ContactDialog({
               draft={formik.values}
               tags={tags}
               selectedTagIds={selectedTagIds}
-              onUseLatest={useLatestConflict}
+              onUseLatest={acceptLatestConflict}
               onMergeDraft={keepDraftChangesOnLatest}
             />
           ) : null}
