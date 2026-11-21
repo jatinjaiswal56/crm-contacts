@@ -4,16 +4,18 @@ import {
   LoaderCircle,
   Plus,
   UsersRound,
-  X,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getApiErrorMessage } from "@/lib/api/error-schema";
 import styles from "./contacts-workspace.module.css";
 import { ContactDialog, type EditableContact } from "./contact-dialog";
 import { ContactFilters, SortToolbar, sortOptions } from "./contact-filters";
 import { ContactsTable, type ContactRow } from "./contacts-table";
 import { PaginationBar } from "./pagination-bar";
+import { BulkTagToolbar, type BulkTagMode } from "./bulk-tag-toolbar";
+import { Toast } from "./toast";
+import { useToast } from "./use-toast";
 import { useContactDirectory } from "./use-contact-directory";
 import { useQueryDraft } from "./use-query-draft";
 
@@ -45,26 +47,13 @@ export function ContactsWorkspace() {
   const [dialogContact, setDialogContact] = useState<EditableContact | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkTagIds, setBulkTagIds] = useState<string[]>([]);
-  const [bulkMode, setBulkMode] = useState<"add" | "replace">("add");
+  const [bulkMode, setBulkMode] = useState<BulkTagMode>("add");
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [isBulkTagging, setIsBulkTagging] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [toast, setToast] = useState<{
-    id: number;
-    message: string;
-    tone: "error" | "success";
-  } | null>(null);
-  const toastId = useRef(0);
+  const { toast, notify: notifyToast, dismiss: dismissToast } = useToast();
   const { result, tags, isLoading, isTagsLoading, error, tagsError } =
     useContactDirectory(queryString, refreshKey);
-
-  const notifyToast = useCallback(
-    (message: string, tone: "error" | "success") => {
-      toastId.current += 1;
-      setToast({ id: toastId.current, message, tone });
-    },
-    [],
-  );
 
   const notifyError = useCallback(
     (message: string) => notifyToast(message, "error"),
@@ -78,12 +67,6 @@ export function ContactsWorkspace() {
     },
     [notifyToast],
   );
-
-  useEffect(() => {
-    if (!toast || toast.tone !== "success") return;
-    const timeout = window.setTimeout(() => setToast(null), 5000);
-    return () => window.clearTimeout(timeout);
-  }, [toast]);
 
   const updateSearchParams = useCallback(
     (
@@ -367,55 +350,23 @@ export function ContactsWorkspace() {
           />
 
           {selectedIds.length ? (
-            <div className={styles.bulkToolbar} aria-label="Bulk tag actions">
-              <strong>{selectedIds.length} selected</strong>
-              <label>
-                <span>Action</span>
-                <select
-                  value={bulkMode}
-                  onChange={(event) =>
-                    setBulkMode(
-                      event.target.value === "replace" ? "replace" : "add",
-                    )
-                  }
-                >
-                  <option value="add">Add tags</option>
-                  <option value="replace">Replace tags</option>
-                </select>
-              </label>
-              <fieldset className={styles.bulkTagFieldset}>
-                <legend>Tags</legend>
-                <div className={styles.bulkTagChoices}>
-                  {tags.map((tag) => (
-                    <label key={tag.id}>
-                      <input
-                        type="checkbox"
-                        checked={bulkTagIds.includes(tag.id)}
-                        disabled={isBulkTagging}
-                        onChange={(event) =>
-                          setBulkTagIds((current) =>
-                            event.target.checked
-                              ? [...current, tag.id]
-                              : current.filter((tagId) => tagId !== tag.id),
-                          )
-                        }
-                      />
-                      {tag.name}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <button
-                type="button"
-                onClick={applyBulkTags}
-                disabled={
-                  isBulkTagging || (bulkMode === "add" && !bulkTagIds.length)
-                }
-              >
-                {isBulkTagging ? "Applying…" : "Apply tags"}
-              </button>
-              <button type="button" onClick={() => setSelectedIds([])} disabled={isBulkTagging}>Clear</button>
-            </div>
+            <BulkTagToolbar
+              selectedCount={selectedIds.length}
+              tags={tags}
+              mode={bulkMode}
+              onModeChange={setBulkMode}
+              selectedTagIds={bulkTagIds}
+              onToggleTag={(tagId, checked) =>
+                setBulkTagIds((current) =>
+                  checked
+                    ? [...current, tagId]
+                    : current.filter((currentTagId) => currentTagId !== tagId),
+                )
+              }
+              isApplying={isBulkTagging}
+              onApply={applyBulkTags}
+              onClearSelection={() => setSelectedIds([])}
+            />
           ) : null}
 
           {error || bulkError ? (
@@ -454,23 +405,7 @@ export function ContactsWorkspace() {
         onError={notifyError}
         onSaved={notifySaved}
       />
-      {toast ? (
-        <div
-          className={`${styles.toast} ${
-            toast.tone === "error" ? styles.toastError : styles.toastSuccess
-          }`}
-          role={toast.tone === "error" ? "alert" : "status"}
-        >
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            aria-label="Dismiss notification"
-            onClick={() => setToast(null)}
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        </div>
-      ) : null}
+      <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   );
 }
