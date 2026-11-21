@@ -505,24 +505,28 @@ export function ContactsWorkspace() {
                   <option value="replace">Replace tags</option>
                 </select>
               </label>
-              <label>
-                <span>Tags</span>
-                <select
-                  multiple
-                  value={bulkTagIds}
-                  onChange={(event) =>
-                    setBulkTagIds(
-                      Array.from(event.target.selectedOptions, (option) => option.value),
-                    )
-                  }
-                >
+              <fieldset className={styles.bulkTagFieldset}>
+                <legend>Tags</legend>
+                <div className={styles.bulkTagChoices}>
                   {tags.map((tag) => (
-                    <option key={tag.id} value={tag.id}>
+                    <label key={tag.id}>
+                      <input
+                        type="checkbox"
+                        checked={bulkTagIds.includes(tag.id)}
+                        disabled={isBulkTagging}
+                        onChange={(event) =>
+                          setBulkTagIds((current) =>
+                            event.target.checked
+                              ? [...current, tag.id]
+                              : current.filter((tagId) => tagId !== tag.id),
+                          )
+                        }
+                      />
                       {tag.name}
-                    </option>
+                    </label>
                   ))}
-                </select>
-              </label>
+                </div>
+              </fieldset>
               <button
                 type="button"
                 onClick={applyBulkTags}
