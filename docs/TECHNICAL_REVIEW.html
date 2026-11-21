@@ -21,7 +21,7 @@
 
     <article>
       <h2>1. Code structure</h2>
-      <p>The directory UI is in <code>ContactsWorkspace</code>; reusable directory reads and async state are in <code>useContactDirectory</code>. Form behavior is isolated in <code>ContactDialog</code>. Route Handlers validate HTTP input, services compose reads, and repositories own database operations.</p>
+      <p><code>ContactsWorkspace</code> owns URL state and wires small components (<code>ContactFilters</code>, <code>ContactsTable</code>, <code>PaginationBar</code>, <code>BulkTagToolbar</code>, <code>Toast</code>), each with its own CSS module. Directory reads live in <code>useContactDirectory</code> and bulk tagging in <code>useBulkTagging</code>. <code>ContactDialog</code> composes field, tag, conflict and activity components, with the save flow in <code>useContactSubmit</code>. Route Handlers validate HTTP input, services compose reads, and repositories own database operations.</p>
     </article>
     <article>
       <h2>2. API and server state</h2>
@@ -33,7 +33,7 @@
     </article>
     <article>
       <h2>4. Forms and concurrent updates</h2>
-      <p>Formik manages form state and Zod validates fields on both client and server. Unsaved edits are guarded on close and page unload. Contact and tag mutations compare the supplied version with the stored version and increment it on success. A stale write returns HTTP 409 with the latest record; the dialog compares draft and server values and supports accepting latest values or merging only the user's changed fields/tags before retrying.</p>
+      <p>Formik manages form state and Zod validates fields on both client and server. Unsaved edits are guarded on close and page unload. Contact and tag mutations compare the supplied version with the stored version and increment it on success. A stale write returns <code>409 VERSION_CONFLICT</code> with the latest record (duplicates return <code>409 DUPLICATE_CONTACT</code>, unknown tags <code>422 INVALID_TAGS</code>, malformed JSON <code>400 INVALID_JSON</code>); the dialog compares draft and server values and supports accepting latest values or merging only the user's changed fields/tags before retrying.</p>
     </article>
     <article>
       <h2>5. Accessibility and responsive UX</h2>
@@ -45,11 +45,11 @@
     </article>
     <article>
       <h2>7. Meaningful tests</h2>
-      <p>Vitest covers API validation, duplicate normalized email/phone values, successful and stale contact updates, stale tag writes, and field/tag merge behavior. Lint and TypeScript checks are also run. Manual browser checks complement automated tests for focus and responsive layout.</p>
+      <p>Vitest covers unit logic, UI behavior with Testing Library and jsdom (search debounce, filters, pagination, empty and error states, bulk add/replace and partial failure, dialog validation, conflicts, focus and Escape), and API routes against a real database (validation, invalid JSON, duplicates, version conflicts, invalid tags, concurrent updates). CI runs lint, typecheck, both test suites and the build.</p>
     </article>
     <article>
       <h2>8. Performance and maintainability</h2>
-      <p>Server pagination, relevant database indexes, debounce, and request cancellation keep work bounded. Virtualization and prefetching are unnecessary for the current page size. Known gaps include no authentication/authorization, offline queue, real-time updates, tag CRUD, or contact deletion. Bulk tag updates are sequential and can partially succeed.</p>
+      <p>Server pagination, relevant database indexes, debounce, and request cancellation keep work bounded. Virtualization and prefetching are unnecessary for the current page size. Known gaps include no authentication/authorization, offline queue, real-time updates, tag CRUD, or contact deletion. Bulk tag updates support add and replace modes, are sequential, and report partial progress if one fails. Search uses <code>ILIKE '%…%'</code>, which a trigram index would speed up at scale.</p>
     </article>
   </body>
 </html>
