@@ -87,10 +87,12 @@ export function useContactDirectory(queryString: string, refreshKey: number) {
           ? `/api/contacts?${sanitizedQuery}`
           : "/api/contacts";
         const response = await fetch(url, { signal: controller.signal });
+        if (controller.signal.aborted) return;
         const payload = await readResponseJson(
           response,
           "The contacts service returned an unreadable response.",
         );
+        if (controller.signal.aborted) return;
 
         if (!response.ok) {
           throw new Error(
