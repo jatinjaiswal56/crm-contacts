@@ -126,6 +126,43 @@ describe("ContactsWorkspace", () => {
     expect(params.get("order")).toBe("desc");
   });
 
+  it("keeps characters typed while the debounced URL update is in flight", async () => {
+    vi.useFakeTimers();
+    const { rerender } = render(<ContactsWorkspace />);
+    const searchbox = screen.getByRole("searchbox", { name: "Search contacts" });
+
+    fireEvent.change(searchbox, { target: { value: "Ale" } });
+    await vi.advanceTimersByTimeAsync(300);
+    expect(mocks.replace).toHaveBeenCalledTimes(1);
+
+    // The user keeps typing before the router has applied "search=Ale".
+    fireEvent.change(searchbox, { target: { value: "Alex" } });
+    mocks.searchParams = "search=Ale";
+    rerender(<ContactsWorkspace />);
+
+    expect(searchbox).toHaveValue("Alex");
+  });
+
+  it("follows the URL when history navigation clears a pushed search", async () => {
+    vi.useFakeTimers();
+    const { rerender } = render(<ContactsWorkspace />);
+    const searchbox = screen.getByRole("searchbox", { name: "Search contacts" });
+
+    fireEvent.change(searchbox, { target: { value: "Alex" } });
+    await vi.advanceTimersByTimeAsync(300);
+    mocks.searchParams = "search=Alex";
+    rerender(<ContactsWorkspace />);
+    expect(searchbox).toHaveValue("Alex");
+
+    // Browser back to the unfiltered list.
+    mocks.searchParams = "";
+    rerender(<ContactsWorkspace />);
+    expect(searchbox).toHaveValue("");
+
+    await vi.advanceTimersByTimeAsync(300);
+    expect(mocks.replace).toHaveBeenCalledTimes(1);
+  });
+
   it("applies filters while clearing the current page", () => {
     mocks.searchParams = "page=5&sort=name";
     vi.useFakeTimers();
