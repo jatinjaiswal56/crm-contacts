@@ -974,6 +974,17 @@
     line-height: 1.35;
   }
 
+  .validationSummary {
+    margin: 0;
+    padding: 9px 11px;
+    border: 1px solid #f1d0d0;
+    border-radius: 8px;
+    color: #8a3333;
+    background: #fff7f7;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
   .dialogFields input,
   .tagFieldset {
     min-height: 40px;

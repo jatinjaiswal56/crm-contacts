@@ -1,7 +1,13 @@
 "use client";
 
 import { useFormik, type FormikErrors, type FormikHelpers } from "formik";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { LoaderCircle, X } from "lucide-react";
 import { z } from "zod";
 import {
@@ -121,6 +127,7 @@ export function ContactDialog({
   const [activityError, setActivityError] = useState<string | null>(null);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const submitContact = useCallback(
     async (
@@ -282,6 +289,22 @@ export function ContactDialog({
   });
   const saving = formik.isSubmitting;
   const hasUnsavedChanges = formik.dirty || tagsDirty;
+  const validationErrorCount = Object.values(formik.errors).filter(Boolean).length;
+
+  function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = contactWriteFieldsSchema.safeParse(formik.values);
+    const firstInvalidField = parsed.success
+      ? undefined
+      : parsed.error.issues[0]?.path[0];
+
+    void formik.submitForm().then(() => {
+      if (typeof firstInvalidField !== "string") return;
+      formRef.current
+        ?.querySelector<HTMLInputElement>(`[name="${firstInvalidField}"]`)
+        ?.focus();
+    });
+  }
 
   const requestClose = useCallback(() => {
     if (saving) {
@@ -446,8 +469,9 @@ export function ContactDialog({
         </div>
 
         <form
+          ref={formRef}
           className={styles.dialogForm}
-          onSubmit={formik.handleSubmit}
+          onSubmit={handleFormSubmit}
           aria-busy={saving}
           noValidate
         >
@@ -606,6 +630,13 @@ export function ContactDialog({
             </label>
           </div>
 
+          {formik.submitCount > 0 && validationErrorCount > 0 ? (
+            <p className={styles.validationSummary} role="alert">
+              Fix {validationErrorCount}{" "}
+              {validationErrorCount === 1 ? "field" : "fields"} to save.
+            </p>
+          ) : null}
+
           <fieldset className={styles.tagFieldset}>
             <legend>Tags (optional)</legend>
             <p className={styles.tagHelp}>
@@ -737,7 +768,7 @@ export function ContactDialog({
               className={styles.dialogPrimary}
               type="submit"
               disabled={
-                (!formik.dirty && !tagsDirty) || !formik.isValid || saving
+                (!formik.dirty && !tagsDirty) || saving
               }
             >
               {saving ? <LoaderCircle className={styles.spinning} size={15} /> : null}
