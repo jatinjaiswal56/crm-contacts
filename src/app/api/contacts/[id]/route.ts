@@ -1,6 +1,8 @@
 import {
   conflictResponse,
+  duplicateContactResponse,
   internalServerErrorResponse,
+  isUniqueConstraintViolation,
   notFoundResponse,
   validationErrorResponse,
 } from "@/lib/api/responses";
@@ -73,12 +75,7 @@ export async function PATCH(
       );
     }
     if (result.kind === "duplicate") {
-      return conflictResponse(
-        "DUPLICATE_CONTACT",
-        result.field === "email"
-          ? "A contact with this email already exists."
-          : "A contact with this phone number already exists.",
-      );
+      return duplicateContactResponse(result.field);
     }
 
     const updatedContact = await getContact(parsedId.data);
@@ -86,17 +83,7 @@ export async function PATCH(
 
     return Response.json({ item: updatedContact });
   } catch (error) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "23505"
-    ) {
-      return conflictResponse(
-        "DUPLICATE_CONTACT",
-        "A contact with this email or phone number already exists.",
-      );
-    }
+    if (isUniqueConstraintViolation(error)) return duplicateContactResponse();
     return internalServerErrorResponse("PATCH /api/contacts/[id]", error);
   }
 }
