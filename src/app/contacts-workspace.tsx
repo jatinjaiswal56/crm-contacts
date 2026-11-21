@@ -1,10 +1,7 @@
 "use client";
 
 import {
-  ChevronLeft,
-  ChevronRight,
   LoaderCircle,
-  Pencil,
   Plus,
   UsersRound,
   X,
@@ -15,25 +12,12 @@ import { getApiErrorMessage } from "@/lib/api/error-schema";
 import styles from "./contacts-workspace.module.css";
 import { ContactDialog, type EditableContact } from "./contact-dialog";
 import { ContactFilters, SortToolbar, sortOptions } from "./contact-filters";
-import {
-  useContactDirectory,
-  type ContactListResponse,
-} from "./use-contact-directory";
+import { ContactsTable, type ContactRow } from "./contacts-table";
+import { PaginationBar } from "./pagination-bar";
+import { useContactDirectory } from "./use-contact-directory";
 import { useQueryDraft } from "./use-query-draft";
 
 type QueryUpdate = Record<string, string | null>;
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function getInitials(firstName: string, lastName: string) {
-  return `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
-}
 
 export function ContactsWorkspace() {
   const pathname = usePathname();
@@ -181,7 +165,7 @@ export function ContactsWorkspace() {
     setDialogOpen(true);
   }
 
-  function openEditDialog(contact: ContactListResponse["items"][number]) {
+  function openEditDialog(contact: ContactRow) {
     setDialogContact({
       id: contact.id,
       firstName: contact.firstName,
@@ -193,6 +177,14 @@ export function ContactsWorkspace() {
       tags: contact.tags,
     });
     setDialogOpen(true);
+  }
+
+  function toggleSelected(contactId: string, selected: boolean) {
+    setSelectedIds((current) =>
+      selected
+        ? [...current, contactId]
+        : current.filter((id) => id !== contactId),
+    );
   }
 
   async function applyBulkTags() {
@@ -283,16 +275,6 @@ export function ContactsWorkspace() {
 
   const hasActiveFilters = Boolean(searchParam || companyParam || tagParam);
   const pagination = result?.pagination;
-  const start = pagination?.total
-    ? (pagination.page - 1) * pagination.pageSize + 1
-    : 0;
-  const end = pagination
-    ? Math.min(pagination.page * pagination.pageSize, pagination.total)
-    : 0;
-  const canGoBack = page > 1;
-  const canGoForward = Boolean(
-    pagination && page < pagination.totalPages,
-  );
 
   return (
     <div className={styles.workspace}>
@@ -444,198 +426,23 @@ export function ContactsWorkspace() {
             </div>
           ) : null}
 
-          {isLoading && !result ? (
-            <div
-              className={styles.loadingState}
-              role="status"
-              aria-label="Loading contacts"
-            >
-              <LoaderCircle
-                className={styles.spinning}
-                size={22}
-                aria-hidden="true"
-              />
-              <span>Loading contacts…</span>
-            </div>
-          ) : null}
+          <ContactsTable
+            result={result}
+            isLoading={isLoading}
+            hasActiveFilters={hasActiveFilters}
+            selectedIds={selectedIds}
+            selectionDisabled={isBulkTagging}
+            onToggleSelected={toggleSelected}
+            onEdit={openEditDialog}
+            onClearFilters={clearFilters}
+          />
 
-          {result && result.items.length === 0 ? (
-            <div className={styles.emptyState}>
-              <span className={styles.emptyIcon} aria-hidden="true">
-                <UsersRound size={22} />
-              </span>
-              <h3>
-                {pagination?.total
-                  ? "No contacts on this page"
-                  : "No contacts found"}
-              </h3>
-              <p>
-                {pagination?.total
-                  ? "Try going back to the previous page."
-                  : "Try changing your search or clearing the filters."}
-              </p>
-              {hasActiveFilters ? (
-                <button
-                  className={styles.clearEmptyButton}
-                  type="button"
-                  onClick={clearFilters}
-                >
-                  Clear filters
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-
-          {result && result.items.length > 0 ? (
-            <div className={styles.tableWrap}>
-              <table className={styles.contactsTable}>
-                <thead>
-                  <tr>
-                    <th scope="col" className={styles.selectColumn}>
-                      <span className={styles.visuallyHidden}>Select</span>
-                    </th>
-                    <th scope="col">Contact</th>
-                    <th scope="col">Company</th>
-                    <th scope="col">Phone</th>
-                    <th scope="col">Tags</th>
-                    <th scope="col">Updated</th>
-                    <th scope="col" className={styles.actionsColumn}>
-                      <span className={styles.visuallyHidden}>Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.items.map((contact) => (
-                    <tr key={contact.id}>
-                      <td className={`${styles.cell} ${styles.selectColumn}`} data-label="Select">
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${contact.firstName} ${contact.lastName}`}
-                          checked={selectedIds.includes(contact.id)}
-                          disabled={isBulkTagging}
-                          onChange={(event) =>
-                            setSelectedIds((current) =>
-                              event.target.checked
-                                ? [...current, contact.id]
-                                : current.filter((id) => id !== contact.id),
-                            )
-                          }
-                        />
-                      </td>
-                      <td
-                        className={`${styles.cell} ${styles.contactCell}`}
-                        data-label="Contact"
-                      >
-                        <div className={styles.contactIdentity}>
-                          <span className={styles.avatar} aria-hidden="true">
-                            {getInitials(contact.firstName, contact.lastName)}
-                          </span>
-                          <span className={styles.contactText}>
-                            <span className={styles.contactName}>
-                              {contact.firstName} {contact.lastName}
-                            </span>
-                            <span className={styles.contactEmail}>
-                              {contact.email ?? "No email address"}
-                            </span>
-                          </span>
-                        </div>
-                      </td>
-                      <td
-                        className={styles.cell}
-                        data-label="Company"
-                      >
-                        {contact.company ?? (
-                          <span className={styles.mutedValue}>—</span>
-                        )}
-                      </td>
-                      <td
-                        className={styles.cell}
-                        data-label="Phone"
-                      >
-                        {contact.phone ?? (
-                          <span className={styles.mutedValue}>—</span>
-                        )}
-                      </td>
-                      <td
-                        className={`${styles.cell} ${styles.tagsCell}`}
-                        data-label="Tags"
-                      >
-                        {contact.tags.length ? (
-                          <div className={styles.tagList}>
-                            {contact.tags.map((contactTag) => (
-                              <span
-                                className={styles.tagChip}
-                                key={contactTag.id}
-                              >
-                                {contactTag.name}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className={styles.mutedValue}>No tags</span>
-                        )}
-                      </td>
-                      <td
-                        className={`${styles.cell} ${styles.updatedCell}`}
-                        data-label="Updated"
-                      >
-                        {formatDate(contact.updatedAt)}
-                      </td>
-                      <td className={`${styles.cell} ${styles.actionsColumn}`} data-label="Actions">
-                        <button
-                          className={styles.editButton}
-                          type="button"
-                          onClick={() => openEditDialog(contact)}
-                          aria-label={`Edit ${contact.firstName} ${contact.lastName}`}
-                        >
-                          <Pencil size={15} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-
-          <footer className={styles.pagination}>
-            <p className={styles.paginationText}>
-              {pagination
-                ? `Showing ${start}–${end} of ${pagination.total} contacts`
-                : "Waiting for contacts"}
-            </p>
-            <div className={styles.paginationControls}>
-              <span className={styles.pageIndicator}>
-                {pagination?.totalPages
-                  ? `Page ${page} of ${pagination.totalPages}`
-                  : "Page —"}
-              </span>
-              <button
-                className={styles.pageButton}
-                type="button"
-                aria-label="Previous page"
-                disabled={!canGoBack || isLoading}
-                onClick={() =>
-                  updateSearchParams({
-                    page: page > 2 ? String(page - 1) : null,
-                  })
-                }
-              >
-                <ChevronLeft size={17} aria-hidden="true" />
-              </button>
-              <button
-                className={styles.pageButton}
-                type="button"
-                aria-label="Next page"
-                disabled={!canGoForward || isLoading}
-                onClick={() =>
-                  updateSearchParams({ page: String(page + 1) })
-                }
-              >
-                <ChevronRight size={17} aria-hidden="true" />
-              </button>
-            </div>
-          </footer>
+          <PaginationBar
+            pagination={pagination}
+            page={page}
+            isLoading={isLoading}
+            onPageChange={(nextPage) => updateSearchParams({ page: nextPage })}
+          />
         </section>
       </main>
       <ContactDialog
