@@ -1,4 +1,5 @@
 import type { FormikProps } from "formik";
+import { normalizePhone } from "@/lib/contacts/normalize";
 import type { ContactWriteFields } from "@/lib/contacts/validation";
 import styles from "./contact-dialog.module.css";
 import { FormField } from "./form-field";
@@ -56,7 +57,7 @@ export function ContactFields({ formik, disabled }: Props) {
         onChange={(event) =>
           formik.setFieldValue(
             "phone",
-            event.target.value.replace(/\D/g, "").slice(0, 10),
+            normalizePhone(event.target.value).slice(0, 10),
           )
         }
         onBlur={formik.handleBlur}

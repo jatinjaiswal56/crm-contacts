@@ -1,3 +1,4 @@
+import { normalizePhone } from "@/lib/contacts/normalize";
 import type { ContactWriteFields } from "@/lib/contacts/validation";
 
 /** A contact as the dialog edits it; `id` and `version` are absent when creating. */
@@ -15,7 +16,7 @@ export type EditableContact = {
 /** Returns the 10 local digits of a stored Indian number, or "" if unrecognized. */
 export function getIndianPhoneDigits(value: string | null) {
   if (!value) return "";
-  const digits = value.replace(/\D/g, "");
+  const digits = normalizePhone(value);
 
   if (digits.length === 10) return digits;
   if (value.trim().startsWith("+91") && digits.length === 12) {
