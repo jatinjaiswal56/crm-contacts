@@ -40,6 +40,14 @@ describe("read API routes", () => {
     });
   });
 
+  it("ignores unknown query parameters", async () => {
+    const response = await getContacts(
+      request("/api/contacts?utm_source=x"),
+    );
+
+    expect(response.status).toBe(200);
+  });
+
   it("filters by case-insensitive search and tag and rejects invalid query values", async () => {
     const filteredResponse = await getContacts(
       request("/api/contacts?search=aarav.kapoor1%40example.com&tag=VIP"),
