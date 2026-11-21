@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { z } from "zod";
+import { getApiErrorMessage } from "@/lib/api/error-schema";
 import styles from "./contacts-workspace.module.css";
 import { ContactDialog, type EditableContact } from "./contact-dialog";
 import {
@@ -281,13 +281,8 @@ export function ContactsWorkspace() {
         });
         const payload: unknown = await response.json().catch(() => null);
         if (!response.ok) {
-          const parsed = z
-            .object({ error: z.object({ message: z.string() }) })
-            .safeParse(payload);
           throw new Error(
-            parsed.success
-              ? parsed.data.error.message
-              : "Could not apply bulk tags.",
+            getApiErrorMessage(payload, "Could not apply bulk tags."),
           );
         }
         updated += 1;

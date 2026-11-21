@@ -14,6 +14,7 @@ import {
   mergeContactDraft,
   mergeContactTagDraft,
 } from "@/lib/contacts/conflict-merge";
+import { getApiErrorMessage } from "@/lib/api/error-schema";
 import {
   contactWriteFieldsSchema,
   type ContactWriteFields,
@@ -98,11 +99,6 @@ function toFormValues(contact: EditableContact | null): ContactWriteFields {
     phone: getIndianPhoneDigits(contact?.phone ?? null),
     company: contact?.company ?? "",
   };
-}
-
-function getErrorMessage(payload: unknown, fallback: string) {
-  const parsed = z.object({ error: z.object({ message: z.string() }) }).safeParse(payload);
-  return parsed.success ? parsed.data.error.message : fallback;
 }
 
 function formatActivityDescription(item: ActivityItem, tags: Tag[]) {
@@ -210,7 +206,10 @@ export function ContactDialog({
               onError(error.message);
               return;
             }
-            const message = getErrorMessage(payload, "Could not save contact.");
+            const message = getApiErrorMessage(
+              payload,
+              "Could not save contact.",
+            );
             onError(message);
             return;
           }
@@ -262,7 +261,9 @@ export function ContactDialog({
               onError(error.message);
               return;
             }
-            throw new Error(getErrorMessage(tagPayload, "Could not save tags."));
+            throw new Error(
+              getApiErrorMessage(tagPayload, "Could not save tags."),
+            );
           }
         }
 
@@ -368,7 +369,9 @@ export function ContactDialog({
       .then(async (response) => {
         const payload: unknown = await response.json().catch(() => null);
         if (!response.ok) {
-          throw new Error(getErrorMessage(payload, "Could not load activity."));
+          throw new Error(
+            getApiErrorMessage(payload, "Could not load activity."),
+          );
         }
         const parsed = activityResponseSchema.safeParse(payload);
         if (!parsed.success) {
