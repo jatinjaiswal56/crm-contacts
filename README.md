@@ -28,6 +28,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Next.js Route Handlers serve the backend API from the same app; the database is the only separate local service. For a standard PostgreSQL database, set `DATABASE_URL` to its connection string instead of starting PGlite.
 
+The seed script uses `onConflictDoNothing`, so running `npm run db:setup` does not replace existing sample contacts. To reload the corrected sample phone numbers in a local PGlite database, stop the database, back up anything you need, remove `data/pglite`, and run `npm run db:setup` again.
+
 Useful commands:
 
 ```bash

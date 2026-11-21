@@ -4,9 +4,11 @@ import { POST as createContact } from "../src/app/api/contacts/route";
 import { PATCH as updateContact } from "../src/app/api/contacts/[id]/route";
 import { PUT as replaceTags } from "../src/app/api/contacts/[id]/tags/route";
 import { db, pool } from "../src/lib/db/client";
-import { contacts, tags } from "../src/lib/db/schema";
+import { contactActivities, contacts, tags } from "../src/lib/db/schema";
 
 const uniqueEmail = "mutation-test@example.com";
+// Test phones use the 70000000xx range; the seed uses 98765xxxxx, so a
+// freshly seeded database (CI) has no duplicates with these contacts.
 const secondUniqueEmail = "mutation-second@example.com";
 let createdId: string | null = null;
 let secondCreatedId: string | null = null;
@@ -18,6 +20,12 @@ const jsonRequest = (url: string, method: string, body: unknown) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+const malformedJsonRequest = (url: string, method: string) =>
+  new Request(`http://localhost${url}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: "{",
+  });
 
 describe("contact mutation routes", () => {
   afterAll(async () => {
@@ -28,6 +36,31 @@ describe("contact mutation routes", () => {
       await db.delete(contacts).where(eq(contacts.id, secondCreatedId));
     }
     await pool.end();
+  });
+
+  it("returns INVALID_JSON for malformed contact and tag mutation bodies", async () => {
+    const id = "00000000-0000-4000-8000-000000000001";
+    const responses = [
+      await createContact(malformedJsonRequest("/api/contacts", "POST")),
+      await updateContact(
+        malformedJsonRequest(`/api/contacts/${id}`, "PATCH"),
+        routeContext(id),
+      ),
+      await replaceTags(
+        malformedJsonRequest(`/api/contacts/${id}/tags`, "PUT"),
+        routeContext(id),
+      ),
+    ];
+
+    for (const response of responses) {
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: {
+          code: "INVALID_JSON",
+          message: "Request body must be valid JSON.",
+        },
+      });
+    }
   });
 
   it("creates contacts and rejects duplicate normalized emails and phone numbers", async () => {
@@ -58,7 +91,7 @@ describe("contact mutation routes", () => {
         firstName: "Mutation",
         lastName: "Tester",
         email: "Mutation-Test@example.com",
-        phone: "9876543210",
+        phone: "7000000010",
         company: "Test Works",
       }),
     );
@@ -67,31 +100,41 @@ describe("contact mutation routes", () => {
     };
 
     expect(created.status).toBe(201);
-    expect(createdBody.item.phone).toBe("+91 9876543210");
+    expect(createdBody.item.phone).toBe("+91 7000000010");
     createdId = createdBody.item.id;
+    const creationActivities = await db
+      .select()
+      .from(contactActivities)
+      .where(eq(contactActivities.contactId, createdId));
+    expect(
+      creationActivities.some((activity) => activity.type === "CONTACT_CREATED"),
+    ).toBe(true);
 
     const duplicate = await createContact(
       jsonRequest("/api/contacts", "POST", {
         firstName: "Other",
         lastName: "Person",
         email: "mutation-test@EXAMPLE.com",
-        phone: "9876543211",
+        phone: "7000000011",
         company: "Another Works",
       }),
     );
     expect(duplicate.status).toBe(409);
+    expect((await duplicate.json()).error.code).toBe("DUPLICATE_CONTACT");
 
     const duplicatePhone = await createContact(
       jsonRequest("/api/contacts", "POST", {
         firstName: "Phone",
         lastName: "Duplicate",
         email: "different-email@example.com",
-        phone: "9876543210",
+        phone: "7000000010",
         company: "Another Works",
       }),
     );
     expect(duplicatePhone.status).toBe(409);
-    expect((await duplicatePhone.json()).error.message).toContain("phone number");
+    const duplicatePhoneBody = await duplicatePhone.json();
+    expect(duplicatePhoneBody.error.code).toBe("DUPLICATE_CONTACT");
+    expect(duplicatePhoneBody.error.message).toContain("phone number");
   });
 
   it("updates with optimistic concurrency and records a conflict", async () => {
@@ -102,7 +145,7 @@ describe("contact mutation routes", () => {
         firstName: "Second",
         lastName: "Mutation",
         email: secondUniqueEmail,
-        phone: "9876543212",
+        phone: "7000000012",
         company: "Test Works",
       }),
     );
@@ -115,36 +158,50 @@ describe("contact mutation routes", () => {
         firstName: "Mutation",
         lastName: "Tester",
         email: uniqueEmail,
-        phone: "9876543212",
+        phone: "7000000012",
         company: "Test Works",
         expectedVersion: 1,
       }),
       routeContext(createdId!),
     );
     expect(duplicatePhoneUpdate.status).toBe(409);
-    expect((await duplicatePhoneUpdate.json()).error.message).toContain(
-      "phone number",
-    );
+    const duplicatePhoneUpdateBody = await duplicatePhoneUpdate.json();
+    expect(duplicatePhoneUpdateBody.error.code).toBe("DUPLICATE_CONTACT");
+    expect(duplicatePhoneUpdateBody.error.message).toContain("phone number");
 
     const firstUpdate = await updateContact(
       jsonRequest(`/api/contacts/${createdId}`, "PATCH", {
         firstName: "Mutation",
         lastName: "Updated",
         email: uniqueEmail,
-        phone: "9876543211",
+        phone: "7000000011",
         company: "Test Works",
         expectedVersion: 1,
       }),
       routeContext(createdId!),
     );
     expect(firstUpdate.status).toBe(200);
+    const firstUpdateBody = await firstUpdate.json();
+    expect(firstUpdateBody.item.tags).toEqual([]);
+    const updateActivities = await db
+      .select()
+      .from(contactActivities)
+      .where(eq(contactActivities.contactId, createdId!));
+    const updateActivity = updateActivities.find(
+      (activity) => activity.type === "CONTACT_UPDATED",
+    );
+    expect(updateActivity?.metadata).toMatchObject({
+      changedFields: ["lastName", "email", "phone"],
+      previousVersion: 1,
+      newVersion: 2,
+    });
 
     const staleUpdate = await updateContact(
       jsonRequest(`/api/contacts/${createdId}`, "PATCH", {
         firstName: "Mutation",
         lastName: "Stale",
         email: uniqueEmail,
-        phone: "9876543212",
+        phone: "7000000012",
         company: "Test Works",
         expectedVersion: 1,
       }),
@@ -152,6 +209,7 @@ describe("contact mutation routes", () => {
     );
     expect(staleUpdate.status).toBe(409);
     const conflictBody = await staleUpdate.json();
+    expect(conflictBody.error.code).toBe("VERSION_CONFLICT");
     expect(conflictBody.latest.lastName).toBe("Updated");
     expect(conflictBody.latest.version).toBe(2);
   });
@@ -169,7 +227,9 @@ describe("contact mutation routes", () => {
       routeContext(createdId!),
     );
     expect(staleResponse.status).toBe(409);
-    expect((await staleResponse.json()).latest.version).toBe(2);
+    const staleBody = await staleResponse.json();
+    expect(staleBody.error.code).toBe("VERSION_CONFLICT");
+    expect(staleBody.latest.version).toBe(2);
 
     const response = await replaceTags(
       jsonRequest(`/api/contacts/${createdId}/tags`, "PUT", {
@@ -180,5 +240,47 @@ describe("contact mutation routes", () => {
     );
     expect(response.status).toBe(200);
     expect((await response.json()).item.version).toBe(3);
+    const addedActivities = await db
+      .select()
+      .from(contactActivities)
+      .where(eq(contactActivities.contactId, createdId!));
+    const addedActivity = addedActivities.find(
+      (activity) => activity.type === "TAG_ADDED",
+    );
+    expect(addedActivity?.metadata).toMatchObject({
+      tagId: availableTags[0]!.id,
+      tagName: availableTags[0]!.name,
+    });
+
+    const removedResponse = await replaceTags(
+      jsonRequest(`/api/contacts/${createdId}/tags`, "PUT", {
+        tagIds: [],
+        expectedVersion: 3,
+      }),
+      routeContext(createdId!),
+    );
+    expect(removedResponse.status).toBe(200);
+    expect((await removedResponse.json()).item.version).toBe(4);
+    const removedActivities = await db
+      .select()
+      .from(contactActivities)
+      .where(eq(contactActivities.contactId, createdId!));
+    const removedActivity = removedActivities.find(
+      (activity) => activity.type === "TAG_REMOVED",
+    );
+    expect(removedActivity?.metadata).toMatchObject({
+      tagId: availableTags[0]!.id,
+      tagName: availableTags[0]!.name,
+    });
+
+    const invalidTags = await replaceTags(
+      jsonRequest(`/api/contacts/${createdId}/tags`, "PUT", {
+        tagIds: ["00000000-0000-4000-8000-000000000099"],
+        expectedVersion: 4,
+      }),
+      routeContext(createdId!),
+    );
+    expect(invalidTags.status).toBe(422);
+    expect((await invalidTags.json()).error.code).toBe("INVALID_TAGS");
   });
 });

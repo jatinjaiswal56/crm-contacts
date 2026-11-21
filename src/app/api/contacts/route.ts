@@ -3,6 +3,7 @@ import {
   internalServerErrorResponse,
   validationErrorResponse,
 } from "@/lib/api/responses";
+import { parseJsonBody } from "@/lib/api/request";
 import { getContact, listContacts } from "@/lib/contacts/service";
 import { createContact } from "@/lib/contacts/repository";
 import {
@@ -24,14 +25,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let payload: unknown;
-  try {
-    payload = await request.json();
-  } catch {
-    payload = {};
+  const body = await parseJsonBody(request);
+  if (!body.success) {
+    return Response.json({ error: body.error }, { status: 400 });
   }
 
-  const parsed = contactWriteFieldsSchema.safeParse(payload);
+  const parsed = contactWriteFieldsSchema.safeParse(body.data);
   if (!parsed.success) {
     return validationErrorResponse(parsed.error);
   }
@@ -47,6 +46,7 @@ export async function POST(request: Request) {
 
     if (result.kind === "duplicate") {
       return conflictResponse(
+        "DUPLICATE_CONTACT",
         result.field === "email"
           ? "A contact with this email already exists."
           : "A contact with this phone number already exists.",
@@ -63,6 +63,7 @@ export async function POST(request: Request) {
       error.code === "23505"
     ) {
       return conflictResponse(
+        "DUPLICATE_CONTACT",
         "A contact with this email or phone number already exists.",
       );
     }

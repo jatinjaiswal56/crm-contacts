@@ -1,5 +1,7 @@
 import type { ZodError } from "zod";
 
+type ConflictCode = "VERSION_CONFLICT" | "DUPLICATE_CONTACT";
+
 export function validationErrorResponse(error: ZodError) {
   return Response.json(
     {
@@ -29,18 +31,34 @@ export function notFoundResponse(resource: string) {
 }
 
 export function conflictResponse(
+  code: ConflictCode,
   message: string,
   details?: Record<string, unknown>,
 ) {
   return Response.json(
     {
       error: {
-        code: "CONFLICT",
+        code,
         message,
       },
       ...details,
     },
     { status: 409 },
+  );
+}
+
+export function unprocessableEntityResponse(
+  code: "INVALID_TAGS",
+  message: string,
+) {
+  return Response.json(
+    {
+      error: {
+        code,
+        message,
+      },
+    },
+    { status: 422 },
   );
 }
 

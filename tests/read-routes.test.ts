@@ -40,6 +40,14 @@ describe("read API routes", () => {
     });
   });
 
+  it("ignores unknown query parameters", async () => {
+    const response = await getContacts(
+      request("/api/contacts?utm_source=x"),
+    );
+
+    expect(response.status).toBe(200);
+  });
+
   it("filters by case-insensitive search and tag and rejects invalid query values", async () => {
     const filteredResponse = await getContacts(
       request("/api/contacts?search=aarav.kapoor1%40example.com&tag=VIP"),
@@ -95,7 +103,9 @@ describe("read API routes", () => {
     expect(firstPage.pagination.total).toBeGreaterThanOrEqual(3);
     expect(firstPage.items).toHaveLength(3);
     expect(
-      firstPage.items.every((contact) => contact.company === "Northstar Labs"),
+      firstPage.items.every((contact) =>
+        contact.company.toLowerCase().includes("northstar labs"),
+      ),
     ).toBe(true);
     expect(
       new Date(firstPage.items[0]!.createdAt).getTime(),
@@ -106,6 +116,24 @@ describe("read API routes", () => {
     expect(
       secondPage.items.every(
         (contact) => !firstPage.items.some((first) => first.id === contact.id),
+      ),
+    ).toBe(true);
+  });
+
+  it("filters companies by a case-insensitive partial match", async () => {
+    const response = await getContacts(
+      request("/api/contacts?company=north&pageSize=100"),
+    );
+    const body = (await response.json()) as {
+      items: { company: string | null }[];
+      pagination: { total: number };
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.pagination.total).toBeGreaterThan(0);
+    expect(
+      body.items.every((contact) =>
+        contact.company?.toLowerCase().includes("north"),
       ),
     ).toBe(true);
   });

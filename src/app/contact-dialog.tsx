@@ -1,7 +1,13 @@
 "use client";
 
 import { useFormik, type FormikErrors, type FormikHelpers } from "formik";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { LoaderCircle, X } from "lucide-react";
 import { z } from "zod";
 import {
@@ -38,7 +44,12 @@ type Props = {
 
 const activityItemSchema = z.object({
   id: z.string(),
-  type: z.enum(["CONTACT_UPDATED", "TAG_ADDED", "TAG_REMOVED"]),
+  type: z.enum([
+    "CONTACT_CREATED",
+    "CONTACT_UPDATED",
+    "TAG_ADDED",
+    "TAG_REMOVED",
+  ]),
   timestamp: z.string(),
   metadata: z.record(z.string(), z.unknown()).nullable(),
 });
@@ -59,7 +70,10 @@ const mutationItemSchema = z.object({
 });
 
 const conflictPayloadSchema = z.object({
-  error: z.object({ message: z.string() }),
+  error: z.object({
+    code: z.literal("VERSION_CONFLICT"),
+    message: z.string(),
+  }),
   latest: mutationItemSchema.extend({
     tags: z.array(z.object({ id: z.string(), name: z.string() })),
   }),
@@ -72,9 +86,6 @@ function getIndianPhoneDigits(value: string | null) {
   if (digits.length === 10) return digits;
   if (value.trim().startsWith("+91") && digits.length === 12) {
     return digits.slice(2);
-  }
-  if (value.trim().startsWith("+1") && digits.length === 11) {
-    return digits.slice(1);
   }
   return "";
 }
@@ -92,6 +103,40 @@ function toFormValues(contact: EditableContact | null): ContactWriteFields {
 function getErrorMessage(payload: unknown, fallback: string) {
   const parsed = z.object({ error: z.object({ message: z.string() }) }).safeParse(payload);
   return parsed.success ? parsed.data.error.message : fallback;
+}
+
+function formatActivityDescription(item: ActivityItem, tags: Tag[]) {
+  const metadata = item.metadata ?? {};
+
+  if (item.type === "CONTACT_CREATED") return "Contact created";
+  if (item.type === "CONTACT_UPDATED") {
+    const changedFields = metadata.changedFields ?? metadata.fields;
+    if (Array.isArray(changedFields)) {
+      const fieldLabels: Record<string, string> = {
+        firstName: "first name",
+        lastName: "last name",
+        email: "email",
+        phone: "phone",
+        company: "company",
+      };
+      const fields = changedFields.filter(
+        (field): field is string => typeof field === "string",
+      );
+      if (fields.length) {
+        return `Updated ${fields.map((field) => fieldLabels[field] ?? field).join(", ")}`;
+      }
+    }
+    return "Contact updated";
+  }
+
+  const tagName =
+    typeof metadata.tagName === "string"
+      ? metadata.tagName
+      : typeof metadata.tagId === "string"
+        ? tags.find((tag) => tag.id === metadata.tagId)?.name
+        : undefined;
+  const action = item.type === "TAG_ADDED" ? "Added" : "Removed";
+  return tagName ? `${action} tag ${tagName}` : `${action} a tag`;
 }
 
 export function ContactDialog({
@@ -121,6 +166,7 @@ export function ContactDialog({
   const [activityError, setActivityError] = useState<string | null>(null);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const submitContact = useCallback(
     async (
@@ -154,11 +200,11 @@ export function ContactDialog({
           );
           const payload: unknown = await response.json().catch(() => null);
           if (!response.ok) {
-            const parsedConflict =
-              response.status === 409
-                ? conflictPayloadSchema.safeParse(payload)
-                : null;
-            if (parsedConflict?.success) {
+            const parsedConflict = conflictPayloadSchema.safeParse(payload);
+            if (
+              parsedConflict.success &&
+              parsedConflict.data.error.code === "VERSION_CONFLICT"
+            ) {
               const { latest, error } = parsedConflict.data;
               setConflict({ latest, message: error.message });
               onError(error.message);
@@ -206,11 +252,11 @@ export function ContactDialog({
           });
           const tagPayload: unknown = await tagResponse.json().catch(() => null);
           if (!tagResponse.ok) {
-            const parsedConflict =
-              tagResponse.status === 409
-                ? conflictPayloadSchema.safeParse(tagPayload)
-                : null;
-            if (parsedConflict?.success) {
+            const parsedConflict = conflictPayloadSchema.safeParse(tagPayload);
+            if (
+              parsedConflict.success &&
+              parsedConflict.data.error.code === "VERSION_CONFLICT"
+            ) {
               const { latest, error } = parsedConflict.data;
               setConflict({ latest, message: error.message });
               onError(error.message);
@@ -282,6 +328,22 @@ export function ContactDialog({
   });
   const saving = formik.isSubmitting;
   const hasUnsavedChanges = formik.dirty || tagsDirty;
+  const validationErrorCount = Object.values(formik.errors).filter(Boolean).length;
+
+  function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = contactWriteFieldsSchema.safeParse(formik.values);
+    const firstInvalidField = parsed.success
+      ? undefined
+      : parsed.error.issues[0]?.path[0];
+
+    void formik.submitForm().then(() => {
+      if (typeof firstInvalidField !== "string") return;
+      formRef.current
+        ?.querySelector<HTMLInputElement>(`[name="${firstInvalidField}"]`)
+        ?.focus();
+    });
+  }
 
   const requestClose = useCallback(() => {
     if (saving) {
@@ -446,8 +508,9 @@ export function ContactDialog({
         </div>
 
         <form
+          ref={formRef}
           className={styles.dialogForm}
-          onSubmit={formik.handleSubmit}
+          onSubmit={handleFormSubmit}
           aria-busy={saving}
           noValidate
         >
@@ -606,6 +669,13 @@ export function ContactDialog({
             </label>
           </div>
 
+          {formik.submitCount > 0 && validationErrorCount > 0 ? (
+            <p className={styles.validationSummary} role="alert">
+              Fix {validationErrorCount}{" "}
+              {validationErrorCount === 1 ? "field" : "fields"} to save.
+            </p>
+          ) : null}
+
           <fieldset className={styles.tagFieldset}>
             <legend>Tags (optional)</legend>
             <p className={styles.tagHelp}>
@@ -717,10 +787,10 @@ export function ContactDialog({
                   </button>
                 </p>
               ) : activity.length ? (
-                <ul>
-                  {activity.slice(0, 5).map((item) => (
+                <ul aria-label="Recent contact activity" tabIndex={0}>
+                  {activity.map((item) => (
                     <li key={item.id}>
-                      <strong>{item.type.replaceAll("_", " ")}</strong>
+                      <strong>{formatActivityDescription(item, tags)}</strong>
                       <span>{new Date(item.timestamp).toLocaleString()}</span>
                     </li>
                   ))}
@@ -737,7 +807,7 @@ export function ContactDialog({
               className={styles.dialogPrimary}
               type="submit"
               disabled={
-                (!formik.dirty && !tagsDirty) || !formik.isValid || saving
+                (!formik.dirty && !tagsDirty) || saving
               }
             >
               {saving ? <LoaderCircle className={styles.spinning} size={15} /> : null}

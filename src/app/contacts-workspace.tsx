@@ -47,7 +47,6 @@ function formatDate(value: string) {
     month: "short",
     day: "numeric",
     year: "numeric",
-    timeZone: "UTC",
   }).format(new Date(value));
 }
 
@@ -90,6 +89,7 @@ export function ContactsWorkspace() {
   const [dialogContact, setDialogContact] = useState<EditableContact | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkTagIds, setBulkTagIds] = useState<string[]>([]);
+  const [bulkMode, setBulkMode] = useState<"add" | "replace">("add");
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [isBulkTagging, setIsBulkTagging] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -124,7 +124,7 @@ export function ContactsWorkspace() {
   );
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast || toast.tone !== "success") return;
     const timeout = window.setTimeout(() => setToast(null), 5000);
     return () => window.clearTimeout(timeout);
   }, [toast]);
@@ -143,6 +143,10 @@ export function ContactsWorkspace() {
 
       const nextQuery = nextParams.toString();
       const href = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      if (nextQuery !== queryString) {
+        setSelectedIds([]);
+        setBulkTagIds([]);
+      }
 
       if (historyMode === "replace") {
         router.replace(href, { scroll: false });
@@ -220,21 +224,58 @@ export function ContactsWorkspace() {
   }
 
   async function applyBulkTags() {
-    if (!selectedIds.length || isBulkTagging) return;
+    if (
+      !selectedIds.length ||
+      isBulkTagging ||
+      (bulkMode === "add" && !bulkTagIds.length)
+    ) {
+      return;
+    }
+    if (
+      bulkMode === "replace" &&
+      !bulkTagIds.length &&
+      !window.confirm(`Remove all tags from ${selectedIds.length} contacts?`)
+    ) {
+      return;
+    }
+
     setBulkError(null);
     setIsBulkTagging(true);
-    let updatedAny = false;
+    const total = selectedIds.length;
+    let updated = 0;
+    let completed = 0;
+    let stoppedAt = "";
     try {
       for (const contactId of selectedIds) {
         const selectedContact = result?.items.find((item) => item.id === contactId);
         if (!selectedContact) {
+          stoppedAt = "a contact no longer on this page";
           throw new Error("A selected contact is no longer on this page. Refresh and try again.");
         }
+        stoppedAt = `${selectedContact.firstName} ${selectedContact.lastName}`;
+        const tagIds =
+          bulkMode === "add"
+            ? Array.from(
+                new Set([
+                  ...selectedContact.tags.map((tag) => tag.id),
+                  ...bulkTagIds,
+                ]),
+              )
+            : bulkTagIds;
+        const currentTagIds = selectedContact.tags.map((tag) => tag.id);
+        if (
+          tagIds.length === currentTagIds.length &&
+          tagIds.every((tagId) => currentTagIds.includes(tagId))
+        ) {
+          completed += 1;
+          continue;
+        }
+
         const response = await fetch(`/api/contacts/${contactId}/tags`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            tagIds: bulkTagIds,
+            tagIds,
             expectedVersion: selectedContact.version,
           }),
         });
@@ -249,19 +290,26 @@ export function ContactsWorkspace() {
               : "Could not apply bulk tags.",
           );
         }
-        updatedAny = true;
+        updated += 1;
+        completed += 1;
       }
       setSelectedIds([]);
       setBulkTagIds([]);
-      notifyToast("Tags updated successfully.", "success");
+      notifyToast(
+        updated ? "Tags updated successfully." : "Tags are already up to date.",
+        "success",
+      );
     } catch (bulkError) {
-      setBulkError(
+      const message =
         bulkError instanceof Error
           ? bulkError.message
-          : "Could not apply bulk tags.",
+          : "Could not apply bulk tags.";
+      setSelectedIds(selectedIds.slice(completed));
+      setBulkError(
+        `Updated ${updated} of ${total}. Stopped at ${stoppedAt}: ${message}`,
       );
     } finally {
-      if (updatedAny) setRefreshKey((value) => value + 1);
+      if (updated > 0) setRefreshKey((value) => value + 1);
       setIsBulkTagging(false);
     }
   }
@@ -309,7 +357,9 @@ export function ContactsWorkspace() {
               <span className={styles.totalValue}>
                 {pagination ? pagination.total : "—"}
               </span>
-              <span className={styles.totalLabel}>total contacts</span>
+              <span className={styles.totalLabel}>
+                {hasActiveFilters ? "matching contacts" : "total contacts"}
+              </span>
             </div>
             <button className={styles.createButton} type="button" onClick={openCreateDialog}>
               <Plus size={16} />
@@ -443,24 +493,48 @@ export function ContactsWorkspace() {
             <div className={styles.bulkToolbar} aria-label="Bulk tag actions">
               <strong>{selectedIds.length} selected</strong>
               <label>
-                <span>Assign tags</span>
+                <span>Action</span>
                 <select
-                  multiple
-                  value={bulkTagIds}
+                  value={bulkMode}
                   onChange={(event) =>
-                    setBulkTagIds(
-                      Array.from(event.target.selectedOptions, (option) => option.value),
+                    setBulkMode(
+                      event.target.value === "replace" ? "replace" : "add",
                     )
                   }
                 >
-                  {tags.map((tag) => (
-                    <option key={tag.id} value={tag.id}>
-                      {tag.name}
-                    </option>
-                  ))}
+                  <option value="add">Add tags</option>
+                  <option value="replace">Replace tags</option>
                 </select>
               </label>
-              <button type="button" onClick={applyBulkTags} disabled={isBulkTagging}>
+              <fieldset className={styles.bulkTagFieldset}>
+                <legend>Tags</legend>
+                <div className={styles.bulkTagChoices}>
+                  {tags.map((tag) => (
+                    <label key={tag.id}>
+                      <input
+                        type="checkbox"
+                        checked={bulkTagIds.includes(tag.id)}
+                        disabled={isBulkTagging}
+                        onChange={(event) =>
+                          setBulkTagIds((current) =>
+                            event.target.checked
+                              ? [...current, tag.id]
+                              : current.filter((tagId) => tagId !== tag.id),
+                          )
+                        }
+                      />
+                      {tag.name}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <button
+                type="button"
+                onClick={applyBulkTags}
+                disabled={
+                  isBulkTagging || (bulkMode === "add" && !bulkTagIds.length)
+                }
+              >
                 {isBulkTagging ? "Applying…" : "Apply tags"}
               </button>
               <button type="button" onClick={() => setSelectedIds([])} disabled={isBulkTagging}>Clear</button>
@@ -543,6 +617,7 @@ export function ContactsWorkspace() {
                           type="checkbox"
                           aria-label={`Select ${contact.firstName} ${contact.lastName}`}
                           checked={selectedIds.includes(contact.id)}
+                          disabled={isBulkTagging}
                           onChange={(event) =>
                             setSelectedIds((current) =>
                               event.target.checked

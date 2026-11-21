@@ -4,6 +4,7 @@ import {
   notFoundResponse,
   validationErrorResponse,
 } from "@/lib/api/responses";
+import { parseJsonBody } from "@/lib/api/request";
 import { getContact } from "@/lib/contacts/service";
 import { updateContact } from "@/lib/contacts/repository";
 import {
@@ -41,14 +42,12 @@ export async function PATCH(
     return validationErrorResponse(parsedId.error);
   }
 
-  let payload: unknown;
-  try {
-    payload = await request.json();
-  } catch {
-    payload = {};
+  const body = await parseJsonBody(request);
+  if (!body.success) {
+    return Response.json({ error: body.error }, { status: 400 });
   }
 
-  const parsed = contactUpdateSchema.safeParse(payload);
+  const parsed = contactUpdateSchema.safeParse(body.data);
   if (!parsed.success) {
     return validationErrorResponse(parsed.error);
   }
@@ -69,23 +68,24 @@ export async function PATCH(
       const latest = await getContact(parsedId.data);
       if (!latest) return notFoundResponse("Contact");
       return conflictResponse(
+        "VERSION_CONFLICT",
         `This contact changed on another device (server version ${result.currentVersion}). Compare the latest values before retrying.`,
         { latest },
       );
     }
     if (result.kind === "duplicate") {
       return conflictResponse(
+        "DUPLICATE_CONTACT",
         result.field === "email"
           ? "A contact with this email already exists."
           : "A contact with this phone number already exists.",
       );
     }
 
-    return Response.json({
-      item: {
-        ...result.contact,
-      },
-    });
+    const updatedContact = await getContact(parsedId.data);
+    if (!updatedContact) return notFoundResponse("Contact");
+
+    return Response.json({ item: updatedContact });
   } catch (error) {
     if (
       typeof error === "object" &&
@@ -94,6 +94,7 @@ export async function PATCH(
       error.code === "23505"
     ) {
       return conflictResponse(
+        "DUPLICATE_CONTACT",
         "A contact with this email or phone number already exists.",
       );
     }

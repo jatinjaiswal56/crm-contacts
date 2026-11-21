@@ -2,8 +2,10 @@ import {
   conflictResponse,
   internalServerErrorResponse,
   notFoundResponse,
+  unprocessableEntityResponse,
   validationErrorResponse,
 } from "@/lib/api/responses";
+import { parseJsonBody } from "@/lib/api/request";
 import { replaceContactTags } from "@/lib/contacts/repository";
 import {
   contactIdSchema,
@@ -21,14 +23,12 @@ export async function PUT(
     return validationErrorResponse(parsedId.error);
   }
 
-  let payload: unknown;
-  try {
-    payload = await request.json();
-  } catch {
-    payload = {};
+  const body = await parseJsonBody(request);
+  if (!body.success) {
+    return Response.json({ error: body.error }, { status: 400 });
   }
 
-  const parsed = tagIdsSchema.safeParse(payload);
+  const parsed = tagIdsSchema.safeParse(body.data);
   if (!parsed.success) {
     return validationErrorResponse(parsed.error);
   }
@@ -46,12 +46,16 @@ export async function PUT(
       const latest = await getContact(parsedId.data);
       if (!latest) return notFoundResponse("Contact");
       return conflictResponse(
+        "VERSION_CONFLICT",
         `This contact changed on another device (server version ${result.currentVersion}). Compare the latest values before retrying.`,
         { latest },
       );
     }
     if (result.kind === "invalid-tags") {
-      return conflictResponse("One or more selected tags no longer exist.");
+      return unprocessableEntityResponse(
+        "INVALID_TAGS",
+        "One or more selected tags no longer exist.",
+      );
     }
     return Response.json({
       item: {
