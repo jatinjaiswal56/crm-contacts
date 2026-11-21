@@ -3,7 +3,6 @@
 import { useFormik, type FormikErrors, type FormikHelpers } from "formik";
 import {
   useCallback,
-  useEffect,
   useRef,
   useState,
   type FormEvent,
@@ -23,6 +22,10 @@ import styles from "./contacts-workspace.module.css";
 import { FormField } from "./form-field";
 import { useFocusTrap } from "./use-focus-trap";
 import { useUnsavedChangesGuard } from "./use-unsaved-changes-guard";
+import {
+  useContactActivity,
+  type ActivityItem,
+} from "./use-contact-activity";
 
 export type EditableContact = {
   id?: string;
@@ -45,23 +48,6 @@ type Props = {
   onError: (message: string) => void;
   onSaved: (message: string) => void;
 };
-
-const activityItemSchema = z.object({
-  id: z.string(),
-  type: z.enum([
-    "CONTACT_CREATED",
-    "CONTACT_UPDATED",
-    "TAG_ADDED",
-    "TAG_REMOVED",
-  ]),
-  timestamp: z.string(),
-  metadata: z.record(z.string(), z.unknown()).nullable(),
-});
-const activityResponseSchema = z.object({
-  items: z.array(activityItemSchema),
-});
-
-type ActivityItem = z.infer<typeof activityItemSchema>;
 
 const mutationItemSchema = z.object({
   id: z.string(),
@@ -158,16 +144,21 @@ export function ContactDialog({
     message: string;
     latest: EditableContact & { version: number };
   } | null>(null);
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [activityLoading, setActivityLoading] = useState(
-    Boolean(open && contact?.id),
-  );
-  const [activityError, setActivityError] = useState<string | null>(null);
-  const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   useFocusTrap(open, dialogRef);
+  const {
+    activity,
+    loading: activityLoading,
+    error: activityError,
+    beginLoading: beginActivityLoading,
+    retry: retryActivity,
+  } = useContactActivity({
+    open,
+    contactId: baseContact?.id,
+    onError,
+  });
 
   const submitContact = useCallback(
     async (
@@ -232,8 +223,7 @@ export function ContactDialog({
             tags: baseContact?.tags ?? [],
           };
           if (!baseContact?.id) {
-            setActivityLoading(true);
-            setActivityError(null);
+            beginActivityLoading();
           }
           setBaseContact(nextBaseContact);
           helpers.resetForm({ values: toFormValues(nextBaseContact) });
@@ -290,6 +280,7 @@ export function ContactDialog({
     },
     [
       baseContact,
+      beginActivityLoading,
       onClose,
       onError,
       onSaved,
@@ -357,41 +348,6 @@ export function ContactDialog({
     saving,
     onClose,
   });
-
-  useEffect(() => {
-    if (!open || !baseContact?.id) return;
-    const controller = new AbortController();
-    void fetch(`/api/contacts/${baseContact.id}/activity`, {
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const payload: unknown = await response.json().catch(() => null);
-        if (!response.ok) {
-          throw new Error(
-            getApiErrorMessage(payload, "Could not load activity."),
-          );
-        }
-        const parsed = activityResponseSchema.safeParse(payload);
-        if (!parsed.success) {
-          throw new Error("The activity service returned invalid data.");
-        }
-        return parsed.data.items;
-      })
-      .then(setActivity)
-      .catch((loadError) => {
-        if (controller.signal.aborted) return;
-        const message =
-          loadError instanceof Error
-            ? loadError.message
-            : "Could not load activity.";
-        setActivityError(message);
-        onError(message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setActivityLoading(false);
-      });
-    return () => controller.abort();
-  }, [activityRefreshKey, baseContact?.id, onError, open]);
 
   function useLatestConflict() {
     if (!conflict) return;
@@ -646,11 +602,7 @@ export function ContactDialog({
                   Could not load activity: {activityError}{" "}
                   <button
                     type="button"
-                    onClick={() => {
-                      setActivityError(null);
-                      setActivityLoading(true);
-                      setActivityRefreshKey((key) => key + 1);
-                    }}
+                    onClick={retryActivity}
                   >
                     Retry
                   </button>
