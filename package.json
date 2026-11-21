@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:unit": "vitest run tests/unit tests/ui",
-    "test:api": "vitest run tests/api",
+    "test:api": "vitest run tests/api --no-file-parallelism",
     "test": "npm run test:unit && npm run test:api",
     "typecheck": "next typegen && tsc --noEmit",
     "db:generate": "drizzle-kit generate",
