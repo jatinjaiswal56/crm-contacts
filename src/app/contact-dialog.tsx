@@ -1,12 +1,7 @@
 "use client";
 
-import { useFormik, type FormikHelpers } from "formik";
-import {
-  useCallback,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { useFormik } from "formik";
+import { useRef, useState, type FormEvent } from "react";
 import { LoaderCircle, X } from "lucide-react";
 import {
   mergeContactDraft,
@@ -25,23 +20,10 @@ import { useContactActivity } from "./use-contact-activity";
 import { ActivityList } from "./activity-list";
 import { ConflictPanel, type ContactConflict } from "./conflict-panel";
 import { TagPicker, type Tag } from "./tag-picker";
-import { getIndianPhoneDigits, toFormValues } from "./contact-form-values";
-import {
-  saveContactFields,
-  saveContactTags,
-  type RequestFailure,
-} from "./contact-requests";
+import { toFormValues, type EditableContact } from "./contact-form-values";
+import { useContactSubmit } from "./use-contact-submit";
 
-export type EditableContact = {
-  id?: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  phone: string | null;
-  company: string | null;
-  version?: number;
-  tags: { id: string; name: string }[];
-};
+export type { EditableContact };
 
 type Props = {
   contact: EditableContact | null;
@@ -85,104 +67,17 @@ export function ContactDialog({
     onError,
   });
 
-  const reportFailure = useCallback(
-    (failure: RequestFailure) => {
-      if (failure.status === "conflict") {
-        setConflict(failure.conflict);
-        onError(failure.conflict.message);
-        return;
-      }
-      onError(failure.message);
-    },
-    [onError],
-  );
-
-  const submitContact = useCallback(
-    async (
-      values: ContactWriteFields,
-      helpers: FormikHelpers<ContactWriteFields>,
-    ) => {
-      const editingExisting = Boolean(baseContact?.id);
-      try {
-        const contactFieldsChanged =
-          !baseContact?.id ||
-          values.firstName !== baseContact.firstName ||
-          values.lastName !== baseContact.lastName ||
-          values.email !== (baseContact.email ?? "") ||
-          values.phone !== getIndianPhoneDigits(baseContact.phone ?? null) ||
-          values.company !== (baseContact.company ?? "");
-
-        let savedId = baseContact?.id;
-        let savedVersion = baseContact?.version ?? 1;
-        if (contactFieldsChanged) {
-          const result = await saveContactFields({
-            contactId: baseContact?.id,
-            expectedVersion: baseContact?.version ?? 1,
-            values,
-          });
-          if (result.status !== "ok") {
-            reportFailure(result);
-            return;
-          }
-
-          savedId = result.data.id;
-          savedVersion = result.data.version;
-          const nextBaseContact: EditableContact = {
-            ...result.data,
-            tags: baseContact?.tags ?? [],
-          };
-          if (!baseContact?.id) {
-            beginActivityLoading();
-          }
-          setBaseContact(nextBaseContact);
-          helpers.resetForm({ values: toFormValues(nextBaseContact) });
-        }
-
-        if (!savedId) {
-          throw new Error("The contacts service returned an invalid response.");
-        }
-
-        const shouldSaveTags =
-          tagsDirty || (!baseContact?.id && selectedTagIds.length > 0);
-        if (shouldSaveTags) {
-          const result = await saveContactTags({
-            contactId: savedId,
-            expectedVersion: savedVersion,
-            tagIds: selectedTagIds,
-          });
-          if (result.status !== "ok") {
-            reportFailure(result);
-            return;
-          }
-        }
-
-        onSaved(
-          editingExisting
-            ? "Contact updated successfully."
-            : "Contact saved successfully.",
-        );
-        onClose();
-      } catch (saveError) {
-        onError(
-          saveError instanceof Error
-            ? saveError.message
-            : "Could not save contact.",
-        );
-      } finally {
-        helpers.setSubmitting(false);
-      }
-    },
-    [
-      baseContact,
-      beginActivityLoading,
-      onClose,
-      onError,
-      onSaved,
-      reportFailure,
-      selectedTagIds,
-      tagsDirty,
-    ],
-  );
+  const submitContact = useContactSubmit({
+    baseContact,
+    selectedTagIds,
+    tagsDirty,
+    setBaseContact,
+    setConflict,
+    beginActivityLoading,
+    onClose,
+    onError,
+    onSaved,
+  });
 
   const formik = useFormik<ContactWriteFields>({
     initialValues: toFormValues(baseContact),
