@@ -1090,9 +1090,16 @@
   .activitySection ul {
     display: grid;
     gap: 7px;
+    max-height: 240px;
     margin: 0;
+    overflow-y: auto;
     padding: 0;
     list-style: none;
+  }
+
+  .activitySection ul:focus-visible {
+    border-radius: 6px;
+    outline: 3px solid rgb(49 91 232 / 18%);
   }
 
   .activitySection li {
