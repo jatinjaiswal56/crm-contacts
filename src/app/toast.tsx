@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import styles from "./contacts-workspace.module.css";
+import styles from "./toast.module.css";
 import type { ToastState } from "./use-toast";
 
 type Props = {

@@ -1,5 +1,5 @@
 import type { ContactWriteFields } from "@/lib/contacts/validation";
-import styles from "./contacts-workspace.module.css";
+import styles from "./contact-dialog.module.css";
 import type { Tag } from "./tag-picker";
 
 type LatestContact = {

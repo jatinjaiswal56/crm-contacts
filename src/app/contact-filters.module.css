@@ -1,0 +1,280 @@
+.filters {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(230px, 1.5fr) minmax(150px, 0.85fr) minmax(140px, 0.75fr) auto auto;
+  align-items: end;
+  gap: 10px;
+  padding: 0 24px 20px;
+}
+
+.searchField {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid #dfe4ec;
+  border-radius: 9px;
+  color: #8490a2;
+  background: #fff;
+}
+
+.searchField:focus-within,
+.filterField input:focus,
+.filterField select:focus,
+.sortControl select:focus {
+  border-color: #8399f1;
+  outline: 3px solid rgb(49 91 232 / 12%);
+}
+
+.searchField input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #17233b;
+  background: transparent;
+  font-size: 13px;
+}
+
+.searchField input::placeholder,
+.filterField input::placeholder {
+  color: #9aa4b3;
+}
+
+.filterField {
+  display: grid;
+  gap: 6px;
+}
+
+.filterLabel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #69758a;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.filterLabel svg {
+  color: #8a96aa;
+}
+
+.filterField input,
+.filterField select,
+.sortControl select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid #dfe4ec;
+  border-radius: 9px;
+  outline: 0;
+  color: #27344a;
+  background: #fff;
+  font-size: 12px;
+}
+
+.filterField select,
+.sortControl select {
+  appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2368758a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 12px;
+}
+
+.applyButton,
+.clearButton {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.applyButton {
+  color: #fff;
+  background: #315be8;
+  box-shadow: 0 4px 10px rgb(49 91 232 / 15%);
+}
+
+.applyButton:hover {
+  background: #244bd3;
+}
+
+.clearButton {
+  padding: 0 5px;
+  color: #68758a;
+  background: transparent;
+}
+
+.clearButton:hover {
+  color: #315be8;
+}
+
+.applyButton:focus-visible,
+.clearButton:focus-visible {
+  outline: 3px solid rgb(49 91 232 / 28%);
+  outline-offset: 2px;
+}
+
+.inlineError {
+  margin: -8px 24px 18px;
+  color: #a13c3c;
+  font-size: 12px;
+}
+
+.tableToolbar {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 53px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 24px;
+  border-top: 1px solid #edf0f4;
+  border-bottom: 1px solid #edf0f4;
+  background: #fbfcfe;
+}
+
+.tableHint {
+  margin: 0;
+  color: #68758a;
+  font-size: 12px;
+}
+
+.sortControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #68758a;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sortControl select {
+  width: auto;
+  min-width: 140px;
+  min-height: 32px;
+  padding: 0 28px 0 9px;
+  font-size: 11px;
+}
+
+@media (max-width: 980px) {
+  .filters {
+    grid-template-columns: minmax(220px, 1fr) minmax(145px, 0.8fr) minmax(130px, 0.7fr);
+  }
+
+  .applyButton,
+  .clearButton {
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 740px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 0 16px 16px;
+  }
+
+  .searchField {
+    grid-column: 1 / -1;
+  }
+
+  .applyButton,
+  .clearButton {
+    grid-row: auto;
+  }
+
+  .clearButton {
+    justify-self: start;
+  }
+
+  .tableToolbar {
+    padding: 0 16px;
+  }
+
+  .inlineError {
+    margin-right: 16px;
+    margin-left: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 0 12px 12px;
+  }
+
+  .searchField {
+    grid-column: 1 / -1;
+  }
+
+  .applyButton {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .clearButton {
+    grid-column: 1 / -1;
+  }
+
+  .tableToolbar {
+    align-items: flex-start;
+    min-height: 46px;
+    padding: 7px 12px;
+  }
+
+  .sortControl {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .sortControl select {
+    min-width: 125px;
+  }
+
+  .filters input,
+  .filters select,
+  .filters .searchField,
+  .filters button {
+    min-height: 38px;
+  }
+}
+
+@media (max-width: 360px) {
+  .filters {
+    gap: 6px;
+    padding: 0 10px 8px;
+  }
+
+  .filters input,
+  .filters select,
+  .filters .searchField,
+  .filters button {
+    min-height: 34px;
+  }
+
+  .filterField {
+    gap: 3px;
+  }
+
+  .filterLabel {
+    font-size: 10px;
+  }
+
+  .tableToolbar {
+    min-height: 40px;
+    padding: 6px 10px;
+  }
+}

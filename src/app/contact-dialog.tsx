@@ -12,7 +12,8 @@ import {
   contactWriteFieldsSchema,
   type ContactWriteFields,
 } from "@/lib/contacts/validation";
-import styles from "./contacts-workspace.module.css";
+import styles from "./contact-dialog.module.css";
+import shared from "./shared.module.css";
 import { ContactFields } from "./contact-fields";
 import { useFocusTrap } from "./use-focus-trap";
 import { useUnsavedChangesGuard } from "./use-unsaved-changes-guard";
@@ -240,7 +241,7 @@ export function ContactDialog({
                 (!formik.dirty && !tagsDirty) || saving
               }
             >
-              {saving ? <LoaderCircle className={styles.spinning} size={15} /> : null}
+              {saving ? <LoaderCircle className={shared.spinning} size={15} /> : null}
               {saving ? "Saving…" : "Save contact"}
             </button>
           </div>
