@@ -111,6 +111,7 @@ describe("contact mutation routes", () => {
       }),
     );
     expect(duplicate.status).toBe(409);
+    expect((await duplicate.json()).error.code).toBe("DUPLICATE_CONTACT");
 
     const duplicatePhone = await createContact(
       jsonRequest("/api/contacts", "POST", {
@@ -122,7 +123,9 @@ describe("contact mutation routes", () => {
       }),
     );
     expect(duplicatePhone.status).toBe(409);
-    expect((await duplicatePhone.json()).error.message).toContain("phone number");
+    const duplicatePhoneBody = await duplicatePhone.json();
+    expect(duplicatePhoneBody.error.code).toBe("DUPLICATE_CONTACT");
+    expect(duplicatePhoneBody.error.message).toContain("phone number");
   });
 
   it("updates with optimistic concurrency and records a conflict", async () => {
@@ -153,9 +156,9 @@ describe("contact mutation routes", () => {
       routeContext(createdId!),
     );
     expect(duplicatePhoneUpdate.status).toBe(409);
-    expect((await duplicatePhoneUpdate.json()).error.message).toContain(
-      "phone number",
-    );
+    const duplicatePhoneUpdateBody = await duplicatePhoneUpdate.json();
+    expect(duplicatePhoneUpdateBody.error.code).toBe("DUPLICATE_CONTACT");
+    expect(duplicatePhoneUpdateBody.error.message).toContain("phone number");
 
     const firstUpdate = await updateContact(
       jsonRequest(`/api/contacts/${createdId}`, "PATCH", {
@@ -183,6 +186,7 @@ describe("contact mutation routes", () => {
     );
     expect(staleUpdate.status).toBe(409);
     const conflictBody = await staleUpdate.json();
+    expect(conflictBody.error.code).toBe("VERSION_CONFLICT");
     expect(conflictBody.latest.lastName).toBe("Updated");
     expect(conflictBody.latest.version).toBe(2);
   });
@@ -200,7 +204,9 @@ describe("contact mutation routes", () => {
       routeContext(createdId!),
     );
     expect(staleResponse.status).toBe(409);
-    expect((await staleResponse.json()).latest.version).toBe(2);
+    const staleBody = await staleResponse.json();
+    expect(staleBody.error.code).toBe("VERSION_CONFLICT");
+    expect(staleBody.latest.version).toBe(2);
 
     const response = await replaceTags(
       jsonRequest(`/api/contacts/${createdId}/tags`, "PUT", {
@@ -211,5 +217,15 @@ describe("contact mutation routes", () => {
     );
     expect(response.status).toBe(200);
     expect((await response.json()).item.version).toBe(3);
+
+    const invalidTags = await replaceTags(
+      jsonRequest(`/api/contacts/${createdId}/tags`, "PUT", {
+        tagIds: ["00000000-0000-4000-8000-000000000099"],
+        expectedVersion: 3,
+      }),
+      routeContext(createdId!),
+    );
+    expect(invalidTags.status).toBe(422);
+    expect((await invalidTags.json()).error.code).toBe("INVALID_TAGS");
   });
 });

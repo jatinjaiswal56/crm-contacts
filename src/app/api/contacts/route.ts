@@ -46,6 +46,7 @@ export async function POST(request: Request) {
 
     if (result.kind === "duplicate") {
       return conflictResponse(
+        "DUPLICATE_CONTACT",
         result.field === "email"
           ? "A contact with this email already exists."
           : "A contact with this phone number already exists.",
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
       error.code === "23505"
     ) {
       return conflictResponse(
+        "DUPLICATE_CONTACT",
         "A contact with this email or phone number already exists.",
       );
     }

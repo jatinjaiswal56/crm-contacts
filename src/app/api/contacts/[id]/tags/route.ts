@@ -2,6 +2,7 @@ import {
   conflictResponse,
   internalServerErrorResponse,
   notFoundResponse,
+  unprocessableEntityResponse,
   validationErrorResponse,
 } from "@/lib/api/responses";
 import { parseJsonBody } from "@/lib/api/request";
@@ -45,12 +46,16 @@ export async function PUT(
       const latest = await getContact(parsedId.data);
       if (!latest) return notFoundResponse("Contact");
       return conflictResponse(
+        "VERSION_CONFLICT",
         `This contact changed on another device (server version ${result.currentVersion}). Compare the latest values before retrying.`,
         { latest },
       );
     }
     if (result.kind === "invalid-tags") {
-      return conflictResponse("One or more selected tags no longer exist.");
+      return unprocessableEntityResponse(
+        "INVALID_TAGS",
+        "One or more selected tags no longer exist.",
+      );
     }
     return Response.json({
       item: {

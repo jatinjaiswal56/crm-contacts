@@ -65,7 +65,10 @@ const mutationItemSchema = z.object({
 });
 
 const conflictPayloadSchema = z.object({
-  error: z.object({ message: z.string() }),
+  error: z.object({
+    code: z.literal("VERSION_CONFLICT"),
+    message: z.string(),
+  }),
   latest: mutationItemSchema.extend({
     tags: z.array(z.object({ id: z.string(), name: z.string() })),
   }),
@@ -158,11 +161,11 @@ export function ContactDialog({
           );
           const payload: unknown = await response.json().catch(() => null);
           if (!response.ok) {
-            const parsedConflict =
-              response.status === 409
-                ? conflictPayloadSchema.safeParse(payload)
-                : null;
-            if (parsedConflict?.success) {
+            const parsedConflict = conflictPayloadSchema.safeParse(payload);
+            if (
+              parsedConflict.success &&
+              parsedConflict.data.error.code === "VERSION_CONFLICT"
+            ) {
               const { latest, error } = parsedConflict.data;
               setConflict({ latest, message: error.message });
               onError(error.message);
@@ -210,11 +213,11 @@ export function ContactDialog({
           });
           const tagPayload: unknown = await tagResponse.json().catch(() => null);
           if (!tagResponse.ok) {
-            const parsedConflict =
-              tagResponse.status === 409
-                ? conflictPayloadSchema.safeParse(tagPayload)
-                : null;
-            if (parsedConflict?.success) {
+            const parsedConflict = conflictPayloadSchema.safeParse(tagPayload);
+            if (
+              parsedConflict.success &&
+              parsedConflict.data.error.code === "VERSION_CONFLICT"
+            ) {
               const { latest, error } = parsedConflict.data;
               setConflict({ latest, message: error.message });
               onError(error.message);

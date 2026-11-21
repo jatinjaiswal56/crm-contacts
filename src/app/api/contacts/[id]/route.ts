@@ -68,12 +68,14 @@ export async function PATCH(
       const latest = await getContact(parsedId.data);
       if (!latest) return notFoundResponse("Contact");
       return conflictResponse(
+        "VERSION_CONFLICT",
         `This contact changed on another device (server version ${result.currentVersion}). Compare the latest values before retrying.`,
         { latest },
       );
     }
     if (result.kind === "duplicate") {
       return conflictResponse(
+        "DUPLICATE_CONTACT",
         result.field === "email"
           ? "A contact with this email already exists."
           : "A contact with this phone number already exists.",
@@ -93,6 +95,7 @@ export async function PATCH(
       error.code === "23505"
     ) {
       return conflictResponse(
+        "DUPLICATE_CONTACT",
         "A contact with this email or phone number already exists.",
       );
     }
