@@ -358,7 +358,9 @@ export function ContactsWorkspace() {
               <span className={styles.totalValue}>
                 {pagination ? pagination.total : "—"}
               </span>
-              <span className={styles.totalLabel}>total contacts</span>
+              <span className={styles.totalLabel}>
+                {hasActiveFilters ? "matching contacts" : "total contacts"}
+              </span>
             </div>
             <button className={styles.createButton} type="button" onClick={openCreateDialog}>
               <Plus size={16} />
