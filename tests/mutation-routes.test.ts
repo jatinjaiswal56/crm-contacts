@@ -4,7 +4,7 @@ import { POST as createContact } from "../src/app/api/contacts/route";
 import { PATCH as updateContact } from "../src/app/api/contacts/[id]/route";
 import { PUT as replaceTags } from "../src/app/api/contacts/[id]/tags/route";
 import { db, pool } from "../src/lib/db/client";
-import { contacts, tags } from "../src/lib/db/schema";
+import { contactActivities, contacts, tags } from "../src/lib/db/schema";
 
 const uniqueEmail = "mutation-test@example.com";
 const secondUniqueEmail = "mutation-second@example.com";
@@ -100,6 +100,13 @@ describe("contact mutation routes", () => {
     expect(created.status).toBe(201);
     expect(createdBody.item.phone).toBe("+91 9876543210");
     createdId = createdBody.item.id;
+    const creationActivities = await db
+      .select()
+      .from(contactActivities)
+      .where(eq(contactActivities.contactId, createdId));
+    expect(
+      creationActivities.some((activity) => activity.type === "CONTACT_CREATED"),
+    ).toBe(true);
 
     const duplicate = await createContact(
       jsonRequest("/api/contacts", "POST", {
@@ -174,6 +181,18 @@ describe("contact mutation routes", () => {
     expect(firstUpdate.status).toBe(200);
     const firstUpdateBody = await firstUpdate.json();
     expect(firstUpdateBody.item.tags).toEqual([]);
+    const updateActivities = await db
+      .select()
+      .from(contactActivities)
+      .where(eq(contactActivities.contactId, createdId!));
+    const updateActivity = updateActivities.find(
+      (activity) => activity.type === "CONTACT_UPDATED",
+    );
+    expect(updateActivity?.metadata).toMatchObject({
+      changedFields: ["lastName", "email", "phone"],
+      previousVersion: 1,
+      newVersion: 2,
+    });
 
     const staleUpdate = await updateContact(
       jsonRequest(`/api/contacts/${createdId}`, "PATCH", {
@@ -219,11 +238,43 @@ describe("contact mutation routes", () => {
     );
     expect(response.status).toBe(200);
     expect((await response.json()).item.version).toBe(3);
+    const addedActivities = await db
+      .select()
+      .from(contactActivities)
+      .where(eq(contactActivities.contactId, createdId!));
+    const addedActivity = addedActivities.find(
+      (activity) => activity.type === "TAG_ADDED",
+    );
+    expect(addedActivity?.metadata).toMatchObject({
+      tagId: availableTags[0]!.id,
+      tagName: availableTags[0]!.name,
+    });
+
+    const removedResponse = await replaceTags(
+      jsonRequest(`/api/contacts/${createdId}/tags`, "PUT", {
+        tagIds: [],
+        expectedVersion: 3,
+      }),
+      routeContext(createdId!),
+    );
+    expect(removedResponse.status).toBe(200);
+    expect((await removedResponse.json()).item.version).toBe(4);
+    const removedActivities = await db
+      .select()
+      .from(contactActivities)
+      .where(eq(contactActivities.contactId, createdId!));
+    const removedActivity = removedActivities.find(
+      (activity) => activity.type === "TAG_REMOVED",
+    );
+    expect(removedActivity?.metadata).toMatchObject({
+      tagId: availableTags[0]!.id,
+      tagName: availableTags[0]!.name,
+    });
 
     const invalidTags = await replaceTags(
       jsonRequest(`/api/contacts/${createdId}/tags`, "PUT", {
         tagIds: ["00000000-0000-4000-8000-000000000099"],
-        expectedVersion: 3,
+        expectedVersion: 4,
       }),
       routeContext(createdId!),
     );

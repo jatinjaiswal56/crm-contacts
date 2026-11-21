@@ -205,6 +205,12 @@ export async function createContact(values: ContactWriteValues) {
       })
       .returning();
 
+    await tx.insert(contactActivities).values({
+      contactId: created.id,
+      type: "CONTACT_CREATED",
+      metadata: {},
+    });
+
     return { kind: "created" as const, contact: created };
   });
 }
@@ -258,6 +264,10 @@ export async function updateContact(
       }
     }
 
+    const changedFields = (
+      ["firstName", "lastName", "email", "phone", "company"] as const
+    ).filter((field) => existing[field] !== values[field]);
+
     const [updated] = await tx
       .update(contacts)
       .set({
@@ -286,9 +296,9 @@ export async function updateContact(
       contactId: id,
       type: "CONTACT_UPDATED",
       metadata: {
+        changedFields,
         previousVersion: expectedVersion,
         newVersion: updated.version,
-        fields: Object.keys(values),
       },
     });
 
@@ -310,14 +320,14 @@ export async function replaceContactTags(
     if (!existing) return { kind: "missing" as const };
 
     const uniqueTagIds = [...new Set(tagIds)];
-    if (uniqueTagIds.length) {
-      const existingTags = await tx
-        .select({ id: tags.id })
+    const selectedTags = uniqueTagIds.length
+      ? await tx
+        .select({ id: tags.id, name: tags.name })
         .from(tags)
-        .where(inArray(tags.id, uniqueTagIds));
-      if (existingTags.length !== uniqueTagIds.length) {
-        return { kind: "invalid-tags" as const };
-      }
+        .where(inArray(tags.id, uniqueTagIds))
+      : [];
+    if (selectedTags.length !== uniqueTagIds.length) {
+      return { kind: "invalid-tags" as const };
     }
 
     const [updatedContact] = await tx
@@ -348,13 +358,14 @@ export async function replaceContactTags(
     }
 
     const current = await tx
-      .select({ tagId: contactTags.tagId })
+      .select({ tagId: contactTags.tagId, tagName: tags.name })
       .from(contactTags)
+      .innerJoin(tags, eq(contactTags.tagId, tags.id))
       .where(eq(contactTags.contactId, contactId));
     const currentIds = new Set(current.map((item) => item.tagId));
     const nextIds = new Set(uniqueTagIds);
-    const addedIds = uniqueTagIds.filter((tagId) => !currentIds.has(tagId));
-    const removedIds = [...currentIds].filter((tagId) => !nextIds.has(tagId));
+    const addedTags = selectedTags.filter((tag) => !currentIds.has(tag.id));
+    const removedTags = current.filter((tag) => !nextIds.has(tag.tagId));
 
     await tx
       .delete(contactTags)
@@ -369,18 +380,18 @@ export async function replaceContactTags(
       );
     }
 
-    for (const tagId of addedIds) {
+    for (const tag of addedTags) {
       await tx.insert(contactActivities).values({
         contactId,
         type: "TAG_ADDED",
-        metadata: { tagId },
+        metadata: { tagId: tag.id, tagName: tag.name },
       });
     }
-    for (const tagId of removedIds) {
+    for (const tag of removedTags) {
       await tx.insert(contactActivities).values({
         contactId,
         type: "TAG_REMOVED",
-        metadata: { tagId },
+        metadata: { tagId: tag.tagId, tagName: tag.tagName },
       });
     }
 

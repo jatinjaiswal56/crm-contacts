@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const activityTypes = [
+  "CONTACT_CREATED",
   "CONTACT_UPDATED",
   "TAG_ADDED",
   "TAG_REMOVED",

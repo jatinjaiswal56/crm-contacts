@@ -44,7 +44,12 @@ type Props = {
 
 const activityItemSchema = z.object({
   id: z.string(),
-  type: z.enum(["CONTACT_UPDATED", "TAG_ADDED", "TAG_REMOVED"]),
+  type: z.enum([
+    "CONTACT_CREATED",
+    "CONTACT_UPDATED",
+    "TAG_ADDED",
+    "TAG_REMOVED",
+  ]),
   timestamp: z.string(),
   metadata: z.record(z.string(), z.unknown()).nullable(),
 });
