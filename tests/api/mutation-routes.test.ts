@@ -1,10 +1,10 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { POST as createContact } from "../src/app/api/contacts/route";
-import { PATCH as updateContact } from "../src/app/api/contacts/[id]/route";
-import { PUT as replaceTags } from "../src/app/api/contacts/[id]/tags/route";
-import { db, pool } from "../src/lib/db/client";
-import { contactActivities, contacts, tags } from "../src/lib/db/schema";
+import { POST as createContact } from "../../src/app/api/contacts/route";
+import { PATCH as updateContact } from "../../src/app/api/contacts/[id]/route";
+import { PUT as replaceTags } from "../../src/app/api/contacts/[id]/tags/route";
+import { db, pool } from "../../src/lib/db/client";
+import { contactActivities, contacts, tags } from "../../src/lib/db/schema";
 
 const uniqueEmail = "mutation-test@example.com";
 // Test phones use the 70000000xx range; the seed uses 98765xxxxx, so a

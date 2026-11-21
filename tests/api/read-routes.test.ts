@@ -1,9 +1,9 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { GET as getContact } from "../src/app/api/contacts/[id]/route";
-import { GET as getContactActivity } from "../src/app/api/contacts/[id]/activity/route";
-import { GET as getContacts } from "../src/app/api/contacts/route";
-import { GET as getTags } from "../src/app/api/tags/route";
-import { pool } from "../src/lib/db/client";
+import { GET as getContact } from "../../src/app/api/contacts/[id]/route";
+import { GET as getContactActivity } from "../../src/app/api/contacts/[id]/activity/route";
+import { GET as getContacts } from "../../src/app/api/contacts/route";
+import { GET as getTags } from "../../src/app/api/tags/route";
+import { pool } from "../../src/lib/db/client";
 
 const seededContactId = "00000000-0000-4000-8000-000000000001";
 const routeContext = (id: string) => ({ params: Promise.resolve({ id }) });
