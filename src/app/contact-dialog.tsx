@@ -21,6 +21,7 @@ import {
 } from "@/lib/contacts/validation";
 import styles from "./contacts-workspace.module.css";
 import { FormField } from "./form-field";
+import { useFocusTrap } from "./use-focus-trap";
 
 export type EditableContact = {
   id?: string;
@@ -164,6 +165,8 @@ export function ContactDialog({
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  useFocusTrap(open, dialogRef);
 
   const submitContact = useCallback(
     async (
@@ -405,44 +408,6 @@ export function ContactDialog({
     window.addEventListener("beforeunload", preventLeaving);
     return () => window.removeEventListener("beforeunload", preventLeaving);
   }, [hasUnsavedChanges, open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const previouslyFocused =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-    const dialog = dialogRef.current;
-    dialog?.querySelector<HTMLElement>("[data-dialog-initial-focus]")?.focus();
-
-    function trapTab(event: KeyboardEvent) {
-      if (event.key !== "Tab" || !dialog) return;
-      const focusable = Array.from(
-        dialog.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((element) => element.offsetParent !== null);
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (!dialog.contains(document.activeElement)) {
-        event.preventDefault();
-        first.focus();
-      } else if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener("keydown", trapTab);
-    return () => {
-      document.removeEventListener("keydown", trapTab);
-      previouslyFocused?.focus();
-    };
-  }, [open]);
 
   function useLatestConflict() {
     if (!conflict) return;
