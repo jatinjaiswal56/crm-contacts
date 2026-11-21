@@ -12,7 +12,7 @@ import {
   sql,
   type SQL,
 } from "drizzle-orm";
-import { db } from "../db/client";
+import { getDb } from "../db/client";
 import {
   contactActivities,
   contactTags,
@@ -51,7 +51,7 @@ function buildContactConditions(query: ContactListQuery) {
   }
 
   if (query.tag) {
-    const matchingTag = db
+    const matchingTag = getDb()
       .select({ contactId: contactTags.contactId })
       .from(contactTags)
       .innerJoin(tags, eq(contactTags.tagId, tags.id))
@@ -80,20 +80,20 @@ export async function findContactPage(query: ContactListQuery) {
         ]
       : [direction(contacts.createdAt), direction(contacts.id)];
 
-  const contactRows = await db
+  const contactRows = await getDb()
       .select()
       .from(contacts)
       .where(where)
       .orderBy(...orderBy)
       .limit(query.pageSize)
       .offset((query.page - 1) * query.pageSize);
-  const countRows = await db
+  const countRows = await getDb()
     .select({ total: count() })
     .from(contacts)
     .where(where);
   const contactIds = contactRows.map((contact) => contact.id);
   const tagRows = contactIds.length
-    ? await db
+    ? await getDb()
         .select({
           contactId: contactTags.contactId,
           id: tags.id,
@@ -120,7 +120,7 @@ export async function findContactPage(query: ContactListQuery) {
 }
 
 export async function findContactById(id: string) {
-  const [contact] = await db
+  const [contact] = await getDb()
     .select()
     .from(contacts)
     .where(eq(contacts.id, id))
@@ -130,7 +130,7 @@ export async function findContactById(id: string) {
 }
 
 export async function findTagsForContact(contactId: string) {
-  return db
+  return getDb()
     .select({ id: tags.id, name: tags.name })
     .from(contactTags)
     .innerJoin(tags, eq(contactTags.tagId, tags.id))
@@ -139,7 +139,7 @@ export async function findTagsForContact(contactId: string) {
 }
 
 export async function contactExists(id: string) {
-  const [contact] = await db
+  const [contact] = await getDb()
     .select({ id: contacts.id })
     .from(contacts)
     .where(eq(contacts.id, id))
@@ -149,7 +149,7 @@ export async function contactExists(id: string) {
 }
 
 export async function findRecentActivity(contactId: string) {
-  return db
+  return getDb()
     .select()
     .from(contactActivities)
     .where(eq(contactActivities.contactId, contactId))
@@ -158,11 +158,11 @@ export async function findRecentActivity(contactId: string) {
 }
 
 export async function findAllTags() {
-  return db.select().from(tags).orderBy(asc(tags.name));
+  return getDb().select().from(tags).orderBy(asc(tags.name));
 }
 
 export async function createContact(values: ContactWriteValues) {
-  return db.transaction(async (tx) => {
+  return getDb().transaction(async (tx) => {
     const emailNormalized = normalizeEmail(values.email);
     const phoneNormalized = normalizePhone(values.phone);
 
@@ -213,7 +213,7 @@ export async function updateContact(
   expectedVersion: number,
   values: ContactWriteValues,
 ) {
-  return db.transaction(async (tx) => {
+  return getDb().transaction(async (tx) => {
     const [existing] = await tx
       .select()
       .from(contacts)
@@ -304,7 +304,7 @@ export async function replaceContactTags(
   tagIds: string[],
   expectedVersion: number,
 ) {
-  return db.transaction(async (tx) => {
+  return getDb().transaction(async (tx) => {
     const [existing] = await tx
       .select({ id: contacts.id })
       .from(contacts)

@@ -1,3 +1,4 @@
+import "./load-env";
 import {
   contactActivities,
   contactTags,
@@ -5,7 +6,7 @@ import {
   tags,
   type ActivityType,
 } from "../src/lib/db/schema";
-import { db, pool } from "../src/lib/db/client";
+import { getDb, getPool } from "../src/lib/db/client";
 
 const makeId = (value: number) =>
   `00000000-0000-4000-8000-${String(value).padStart(12, "0")}`;
@@ -111,7 +112,7 @@ const activityRows = contactRows.slice(0, 24).map((contact, index) => {
 
 async function main() {
   try {
-    await db.transaction(async (transaction) => {
+    await getDb().transaction(async (transaction) => {
       await transaction
         .insert(contacts)
         .values(contactRows)
@@ -131,7 +132,7 @@ async function main() {
       `Seeded ${contactRows.length} contacts, ${tagRows.length} tags, and ${activityRows.length} activities.`,
     );
   } finally {
-    await pool.end();
+    await getPool().end();
   }
 }
 
