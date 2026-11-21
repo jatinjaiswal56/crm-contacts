@@ -1,11 +1,15 @@
 import type { ContactWriteFields } from "@/lib/contacts/validation";
 
-type ContactFieldSource = {
+/** A contact as the dialog edits it; `id` and `version` are absent when creating. */
+export type EditableContact = {
+  id?: string;
   firstName: string;
   lastName: string;
   email: string | null;
   phone: string | null;
   company: string | null;
+  version?: number;
+  tags: { id: string; name: string }[];
 };
 
 /** Returns the 10 local digits of a stored Indian number, or "" if unrecognized. */
@@ -21,7 +25,7 @@ export function getIndianPhoneDigits(value: string | null) {
 }
 
 export function toFormValues(
-  contact: ContactFieldSource | null,
+  contact: EditableContact | null,
 ): ContactWriteFields {
   return {
     firstName: contact?.firstName ?? "",
