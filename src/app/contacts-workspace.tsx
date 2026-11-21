@@ -1,14 +1,10 @@
 "use client";
 
-import {
-  LoaderCircle,
-  Plus,
-  UsersRound,
-} from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import styles from "./contacts-workspace.module.css";
 import { ContactDialog, type EditableContact } from "./contact-dialog";
+import { ContactsListHeader, ContactsPageHeader } from "./contacts-header";
 import { ContactFilters, SortToolbar, sortOptions } from "./contact-filters";
 import { ContactsTable, type ContactRow } from "./contacts-table";
 import { PaginationBar } from "./pagination-bar";
@@ -179,60 +175,21 @@ export function ContactsWorkspace() {
       </header>
 
       <main>
-        <section className={styles.pageHeader} aria-labelledby="page-title">
-          <div>
-            <p className={styles.eyebrow}>CONTACT MANAGEMENT</p>
-            <h1 id="page-title">Contacts</h1>
-            <p className={styles.pageDescription}>
-              Search, filter, and browse the people in your workspace.
-            </p>
-          </div>
-          <div className={styles.headerActions}>
-            <div className={styles.totalCard} aria-live="polite">
-              <span className={styles.totalIcon} aria-hidden="true">
-                <UsersRound size={19} />
-              </span>
-              <span className={styles.totalValue}>
-                {pagination ? pagination.total : "—"}
-              </span>
-              <span className={styles.totalLabel}>
-                {hasActiveFilters ? "matching contacts" : "total contacts"}
-              </span>
-            </div>
-            <button className={styles.createButton} type="button" onClick={openCreateDialog}>
-              <Plus size={16} />
-              New contact
-            </button>
-          </div>
-        </section>
+        <ContactsPageHeader
+          total={pagination?.total}
+          hasActiveFilters={hasActiveFilters}
+          onCreate={openCreateDialog}
+        />
 
         <section
           className={styles.panel}
           aria-labelledby="contacts-heading"
           aria-busy={isLoading}
         >
-          <div className={styles.panelHeader}>
-            <div>
-              <h2 id="contacts-heading">All contacts</h2>
-              <p>Browse contact details, companies, and tags.</p>
-            </div>
-            <div className={styles.matchCount} aria-live="polite">
-              {isLoading && result ? (
-                <>
-                  <LoaderCircle
-                    className={styles.spinning}
-                    size={15}
-                    aria-hidden="true"
-                  />
-                  Updating…
-                </>
-              ) : pagination ? (
-                `${pagination.total} ${pagination.total === 1 ? "match" : "matches"}`
-              ) : (
-                "Loading…"
-              )}
-            </div>
-          </div>
+          <ContactsListHeader
+            total={pagination?.total}
+            isRefreshing={isLoading && Boolean(result)}
+          />
 
           <ContactFilters
             searchText={searchText}
