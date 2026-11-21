@@ -337,12 +337,12 @@ export function ContactDialog({
       ? undefined
       : parsed.error.issues[0]?.path[0];
 
-    void formik.submitForm().then(() => {
-      if (typeof firstInvalidField !== "string") return;
+    void formik.submitForm();
+    if (typeof firstInvalidField === "string") {
       formRef.current
         ?.querySelector<HTMLInputElement>(`[name="${firstInvalidField}"]`)
         ?.focus();
-    });
+    }
   }
 
   const requestClose = useCallback(() => {
