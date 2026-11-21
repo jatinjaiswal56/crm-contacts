@@ -1,6 +1,6 @@
 import type { FormikProps } from "formik";
 import type { ContactWriteFields } from "@/lib/contacts/validation";
-import styles from "./contacts-workspace.module.css";
+import styles from "./contact-dialog.module.css";
 import { FormField } from "./form-field";
 
 type Props = {

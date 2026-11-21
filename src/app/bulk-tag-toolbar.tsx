@@ -1,4 +1,4 @@
-import styles from "./contacts-workspace.module.css";
+import styles from "./bulk-tag-toolbar.module.css";
 import type { FilterTag } from "./use-contact-directory";
 
 export type BulkTagMode = "add" | "replace";

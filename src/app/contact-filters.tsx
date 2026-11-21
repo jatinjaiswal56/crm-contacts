@@ -1,6 +1,7 @@
 import { Building2, Filter, Search, Tag, X } from "lucide-react";
 import type { FormEvent } from "react";
-import styles from "./contacts-workspace.module.css";
+import styles from "./contact-filters.module.css";
+import shared from "./shared.module.css";
 import type { FilterTag } from "./use-contact-directory";
 
 export const sortOptions = [
@@ -59,7 +60,7 @@ export function ContactFilters({
       <form className={styles.filters} onSubmit={handleSubmit}>
         <label className={styles.searchField}>
           <Search size={18} aria-hidden="true" />
-          <span className={styles.visuallyHidden}>Search contacts</span>
+          <span className={shared.visuallyHidden}>Search contacts</span>
           <input
             type="search"
             value={searchText}

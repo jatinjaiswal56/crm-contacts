@@ -1,4 +1,4 @@
-import styles from "./contacts-workspace.module.css";
+import styles from "./tag-picker.module.css";
 
 export type Tag = {
   id: string;
