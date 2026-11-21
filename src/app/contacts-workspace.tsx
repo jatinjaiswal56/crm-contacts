@@ -242,13 +242,18 @@ export function ContactsWorkspace() {
 
     setBulkError(null);
     setIsBulkTagging(true);
-    let updatedAny = false;
+    const total = selectedIds.length;
+    let updated = 0;
+    let completed = 0;
+    let stoppedAt = "";
     try {
       for (const contactId of selectedIds) {
         const selectedContact = result?.items.find((item) => item.id === contactId);
         if (!selectedContact) {
+          stoppedAt = "a contact no longer on this page";
           throw new Error("A selected contact is no longer on this page. Refresh and try again.");
         }
+        stoppedAt = `${selectedContact.firstName} ${selectedContact.lastName}`;
         const tagIds =
           bulkMode === "add"
             ? Array.from(
@@ -263,6 +268,7 @@ export function ContactsWorkspace() {
           tagIds.length === currentTagIds.length &&
           tagIds.every((tagId) => currentTagIds.includes(tagId))
         ) {
+          completed += 1;
           continue;
         }
 
@@ -285,22 +291,26 @@ export function ContactsWorkspace() {
               : "Could not apply bulk tags.",
           );
         }
-        updatedAny = true;
+        updated += 1;
+        completed += 1;
       }
       setSelectedIds([]);
       setBulkTagIds([]);
       notifyToast(
-        updatedAny ? "Tags updated successfully." : "Tags are already up to date.",
+        updated ? "Tags updated successfully." : "Tags are already up to date.",
         "success",
       );
     } catch (bulkError) {
-      setBulkError(
+      const message =
         bulkError instanceof Error
           ? bulkError.message
-          : "Could not apply bulk tags.",
+          : "Could not apply bulk tags.";
+      setSelectedIds(selectedIds.slice(completed));
+      setBulkError(
+        `Updated ${updated} of ${total}. Stopped at ${stoppedAt}: ${message}`,
       );
     } finally {
-      if (updatedAny) setRefreshKey((value) => value + 1);
+      if (updated > 0) setRefreshKey((value) => value + 1);
       setIsBulkTagging(false);
     }
   }
@@ -602,6 +612,7 @@ export function ContactsWorkspace() {
                           type="checkbox"
                           aria-label={`Select ${contact.firstName} ${contact.lastName}`}
                           checked={selectedIds.includes(contact.id)}
+                          disabled={isBulkTagging}
                           onChange={(event) =>
                             setSelectedIds((current) =>
                               event.target.checked
