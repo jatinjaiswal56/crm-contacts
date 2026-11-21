@@ -21,12 +21,15 @@ import {
 } from "../db/schema";
 import type { ContactListQuery } from "./validation";
 
+function escapeLike(value: string) {
+  return value.replace(/[\\%_]/g, "\\$&");
+}
+
 function buildContactConditions(query: ContactListQuery) {
   const conditions: SQL[] = [];
 
   if (query.search) {
-    const escapedSearch = query.search.replace(/[\\%_]/g, "\\$&");
-    const pattern = `%${escapedSearch}%`;
+    const pattern = `%${escapeLike(query.search)}%`;
     const searchCondition = or(
       ilike(contacts.firstName, pattern),
       ilike(contacts.lastName, pattern),
@@ -39,9 +42,7 @@ function buildContactConditions(query: ContactListQuery) {
   }
 
   if (query.company) {
-    conditions.push(
-      sql`lower(${contacts.company}) = ${query.company.toLowerCase()}`,
-    );
+    conditions.push(ilike(contacts.company, `%${escapeLike(query.company)}%`));
   }
 
   if (query.tag) {
