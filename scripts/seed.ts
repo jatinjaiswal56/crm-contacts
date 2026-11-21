@@ -58,7 +58,8 @@ const contactRows = Array.from({ length: 36 }, (_, index) => {
   const lastName =
     lastNames[Math.floor(index / firstNames.length) % lastNames.length];
   const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${index + 1}@example.com`;
-  const phone = `+1 415 555 ${String(1000 + index).slice(-4)}`;
+  const phoneDigits = `98765${String(43210 + index)}`;
+  const phone = `+91 ${phoneDigits}`;
   const createdAt = new Date(Date.UTC(2025, 0, index + 1, 10));
 
   return {
@@ -68,7 +69,7 @@ const contactRows = Array.from({ length: 36 }, (_, index) => {
     email,
     emailNormalized: email.toLowerCase(),
     phone,
-    phoneNormalized: phone.replace(/\D/g, ""),
+    phoneNormalized: `91${phoneDigits}`,
     company: companies[index % companies.length],
     createdAt,
     updatedAt: new Date(Date.UTC(2025, 0, index + 2, 10)),
