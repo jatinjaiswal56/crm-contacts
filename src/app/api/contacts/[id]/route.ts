@@ -82,11 +82,10 @@ export async function PATCH(
       );
     }
 
-    return Response.json({
-      item: {
-        ...result.contact,
-      },
-    });
+    const updatedContact = await getContact(parsedId.data);
+    if (!updatedContact) return notFoundResponse("Contact");
+
+    return Response.json({ item: updatedContact });
   } catch (error) {
     if (
       typeof error === "object" &&

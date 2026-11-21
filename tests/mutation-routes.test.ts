@@ -172,6 +172,8 @@ describe("contact mutation routes", () => {
       routeContext(createdId!),
     );
     expect(firstUpdate.status).toBe(200);
+    const firstUpdateBody = await firstUpdate.json();
+    expect(firstUpdateBody.item.tags).toEqual([]);
 
     const staleUpdate = await updateContact(
       jsonRequest(`/api/contacts/${createdId}`, "PATCH", {
