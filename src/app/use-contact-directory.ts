@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import { sanitizeContactQuery } from "../lib/contacts/query-params";
 
 const contactTagSchema = z.object({
   id: z.string(),
@@ -79,8 +80,11 @@ export function useContactDirectory(queryString: string, refreshKey: number) {
       setError(null);
 
       try {
-        const url = queryString
-          ? `/api/contacts?${queryString}`
+        const sanitizedQuery = sanitizeContactQuery(
+          new URLSearchParams(queryString),
+        );
+        const url = sanitizedQuery
+          ? `/api/contacts?${sanitizedQuery}`
           : "/api/contacts";
         const response = await fetch(url, { signal: controller.signal });
         const payload = await readResponseJson(
