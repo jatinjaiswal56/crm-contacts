@@ -79,9 +79,6 @@ function getIndianPhoneDigits(value: string | null) {
   if (value.trim().startsWith("+91") && digits.length === 12) {
     return digits.slice(2);
   }
-  if (value.trim().startsWith("+1") && digits.length === 11) {
-    return digits.slice(1);
-  }
   return "";
 }
 
