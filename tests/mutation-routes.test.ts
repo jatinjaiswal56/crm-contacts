@@ -7,6 +7,8 @@ import { db, pool } from "../src/lib/db/client";
 import { contactActivities, contacts, tags } from "../src/lib/db/schema";
 
 const uniqueEmail = "mutation-test@example.com";
+// Test phones use the 70000000xx range; the seed uses 98765xxxxx, so a
+// freshly seeded database (CI) has no duplicates with these contacts.
 const secondUniqueEmail = "mutation-second@example.com";
 let createdId: string | null = null;
 let secondCreatedId: string | null = null;
@@ -89,7 +91,7 @@ describe("contact mutation routes", () => {
         firstName: "Mutation",
         lastName: "Tester",
         email: "Mutation-Test@example.com",
-        phone: "9876543210",
+        phone: "7000000010",
         company: "Test Works",
       }),
     );
@@ -98,7 +100,7 @@ describe("contact mutation routes", () => {
     };
 
     expect(created.status).toBe(201);
-    expect(createdBody.item.phone).toBe("+91 9876543210");
+    expect(createdBody.item.phone).toBe("+91 7000000010");
     createdId = createdBody.item.id;
     const creationActivities = await db
       .select()
@@ -113,7 +115,7 @@ describe("contact mutation routes", () => {
         firstName: "Other",
         lastName: "Person",
         email: "mutation-test@EXAMPLE.com",
-        phone: "9876543211",
+        phone: "7000000011",
         company: "Another Works",
       }),
     );
@@ -125,7 +127,7 @@ describe("contact mutation routes", () => {
         firstName: "Phone",
         lastName: "Duplicate",
         email: "different-email@example.com",
-        phone: "9876543210",
+        phone: "7000000010",
         company: "Another Works",
       }),
     );
@@ -143,7 +145,7 @@ describe("contact mutation routes", () => {
         firstName: "Second",
         lastName: "Mutation",
         email: secondUniqueEmail,
-        phone: "9876543212",
+        phone: "7000000012",
         company: "Test Works",
       }),
     );
@@ -156,7 +158,7 @@ describe("contact mutation routes", () => {
         firstName: "Mutation",
         lastName: "Tester",
         email: uniqueEmail,
-        phone: "9876543212",
+        phone: "7000000012",
         company: "Test Works",
         expectedVersion: 1,
       }),
@@ -172,7 +174,7 @@ describe("contact mutation routes", () => {
         firstName: "Mutation",
         lastName: "Updated",
         email: uniqueEmail,
-        phone: "9876543211",
+        phone: "7000000011",
         company: "Test Works",
         expectedVersion: 1,
       }),
@@ -199,7 +201,7 @@ describe("contact mutation routes", () => {
         firstName: "Mutation",
         lastName: "Stale",
         email: uniqueEmail,
-        phone: "9876543212",
+        phone: "7000000012",
         company: "Test Works",
         expectedVersion: 1,
       }),
