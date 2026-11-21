@@ -19,6 +19,11 @@ import {
   contacts,
   tags,
 } from "../db/schema";
+import {
+  normalizeEmail,
+  normalizePhone,
+  type ContactWriteValues,
+} from "./normalize";
 import type { ContactListQuery } from "./validation";
 
 function escapeLike(value: string) {
@@ -156,21 +161,9 @@ export async function findAllTags() {
   return db.select().from(tags).orderBy(asc(tags.name));
 }
 
-export type ContactWriteValues = {
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  phone: string | null;
-  company: string | null;
-};
-
-function normalizePhone(phone: string | null) {
-  return phone?.replace(/\D/g, "") || null;
-}
-
 export async function createContact(values: ContactWriteValues) {
   return db.transaction(async (tx) => {
-    const emailNormalized = values.email?.trim().toLowerCase() || null;
+    const emailNormalized = normalizeEmail(values.email);
     const phoneNormalized = normalizePhone(values.phone);
 
     if (emailNormalized) {
@@ -235,7 +228,7 @@ export async function updateContact(
       };
     }
 
-    const emailNormalized = values.email?.trim().toLowerCase() || null;
+    const emailNormalized = normalizeEmail(values.email);
     const phoneNormalized = normalizePhone(values.phone);
     if (emailNormalized) {
       const [duplicate] = await tx
