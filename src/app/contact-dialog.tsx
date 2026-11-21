@@ -22,10 +22,10 @@ import styles from "./contacts-workspace.module.css";
 import { FormField } from "./form-field";
 import { useFocusTrap } from "./use-focus-trap";
 import { useUnsavedChangesGuard } from "./use-unsaved-changes-guard";
-import {
-  useContactActivity,
-  type ActivityItem,
-} from "./use-contact-activity";
+import { useContactActivity } from "./use-contact-activity";
+import { ActivityList } from "./activity-list";
+import { ConflictPanel, type ContactConflict } from "./conflict-panel";
+import { TagPicker, type Tag } from "./tag-picker";
 
 export type EditableContact = {
   id?: string;
@@ -37,8 +37,6 @@ export type EditableContact = {
   version?: number;
   tags: { id: string; name: string }[];
 };
-
-type Tag = { id: string; name: string; nameNormalized: string };
 
 type Props = {
   contact: EditableContact | null;
@@ -90,40 +88,6 @@ function toFormValues(contact: EditableContact | null): ContactWriteFields {
   };
 }
 
-function formatActivityDescription(item: ActivityItem, tags: Tag[]) {
-  const metadata = item.metadata ?? {};
-
-  if (item.type === "CONTACT_CREATED") return "Contact created";
-  if (item.type === "CONTACT_UPDATED") {
-    const changedFields = metadata.changedFields ?? metadata.fields;
-    if (Array.isArray(changedFields)) {
-      const fieldLabels: Record<string, string> = {
-        firstName: "first name",
-        lastName: "last name",
-        email: "email",
-        phone: "phone",
-        company: "company",
-      };
-      const fields = changedFields.filter(
-        (field): field is string => typeof field === "string",
-      );
-      if (fields.length) {
-        return `Updated ${fields.map((field) => fieldLabels[field] ?? field).join(", ")}`;
-      }
-    }
-    return "Contact updated";
-  }
-
-  const tagName =
-    typeof metadata.tagName === "string"
-      ? metadata.tagName
-      : typeof metadata.tagId === "string"
-        ? tags.find((tag) => tag.id === metadata.tagId)?.name
-        : undefined;
-  const action = item.type === "TAG_ADDED" ? "Added" : "Removed";
-  return tagName ? `${action} tag ${tagName}` : `${action} a tag`;
-}
-
 export function ContactDialog({
   contact,
   tags,
@@ -140,10 +104,7 @@ export function ContactDialog({
   const tagsDirty =
     initialTagIds.length !== selectedTagIds.length ||
     initialTagIds.some((tagId) => !selectedTagIds.includes(tagId));
-  const [conflict, setConflict] = useState<{
-    message: string;
-    latest: EditableContact & { version: number };
-  } | null>(null);
+  const [conflict, setConflict] = useState<ContactConflict | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -501,125 +462,38 @@ export function ContactDialog({
             </p>
           ) : null}
 
-          <fieldset className={styles.tagFieldset}>
-            <legend>Tags (optional)</legend>
-            <p className={styles.tagHelp}>
-              Select or clear tags to update this contact.
-            </p>
-            <div className={styles.tagChoices}>
-              {tags.map((tag) => (
-                <label key={tag.id}>
-                  <input
-                    type="checkbox"
-                    checked={selectedTagIds.includes(tag.id)}
-                    disabled={saving}
-                    onChange={(event) =>
-                      setSelectedTagIds((current) =>
-                        event.target.checked
-                          ? [...current, tag.id]
-                          : current.filter((tagId) => tagId !== tag.id),
-                      )
-                    }
-                  />
-                  {tag.name}
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <TagPicker
+            tags={tags}
+            selectedTagIds={selectedTagIds}
+            disabled={saving}
+            onChange={(tagId, checked) =>
+              setSelectedTagIds((current) =>
+                checked
+                  ? [...current, tagId]
+                  : current.filter((currentTagId) => currentTagId !== tagId),
+              )
+            }
+          />
 
           {conflict ? (
-            <section
-              className={styles.conflictSection}
-              role="alert"
-              aria-labelledby="contact-conflict-title"
-            >
-              <h3 id="contact-conflict-title">This contact changed while you were editing</h3>
-              <p id="contact-conflict-message">{conflict.message}</p>
-              <p>
-                Compare your draft with the latest saved values. You can accept
-                the latest version or merge only your changed fields, then save
-                again.
-              </p>
-              <div className={styles.conflictCompare}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Field</th>
-                      <th scope="col">Your draft</th>
-                      <th scope="col">Latest server value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      ["First name", formik.values.firstName, conflict.latest.firstName],
-                      ["Last name", formik.values.lastName, conflict.latest.lastName],
-                      ["Email", formik.values.email, conflict.latest.email ?? "—"],
-                      [
-                        "Phone",
-                        formik.values.phone ? `+91 ${formik.values.phone}` : "—",
-                        conflict.latest.phone ?? "—",
-                      ],
-                      ["Company", formik.values.company, conflict.latest.company ?? "—"],
-                      [
-                        "Tags",
-                        selectedTagIds
-                          .map((id) => tags.find((tag) => tag.id === id)?.name ?? id)
-                          .join(", ") || "—",
-                        conflict.latest.tags.map((tag) => tag.name).join(", ") || "—",
-                      ],
-                    ].map(([label, draftValue, latestValue]) => (
-                      <tr key={label}>
-                        <th scope="row">{label}</th>
-                        <td>{draftValue || "—"}</td>
-                        <td>{latestValue || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className={styles.conflictActions}>
-                <button type="button" onClick={useLatestConflict}>
-                  Use latest values
-                </button>
-                <button
-                  className={styles.dialogPrimary}
-                  type="button"
-                  onClick={keepDraftChangesOnLatest}
-                >
-                  Merge my draft onto latest
-                </button>
-              </div>
-            </section>
+            <ConflictPanel
+              conflict={conflict}
+              draft={formik.values}
+              tags={tags}
+              selectedTagIds={selectedTagIds}
+              onUseLatest={useLatestConflict}
+              onMergeDraft={keepDraftChangesOnLatest}
+            />
           ) : null}
 
           {baseContact?.id ? (
-            <section className={styles.activitySection} aria-label="Recent activity">
-              <h3>Recent activity</h3>
-              {activityLoading ? (
-                <p role="status">Loading activity…</p>
-              ) : activityError ? (
-                <p role="alert">
-                  Could not load activity: {activityError}{" "}
-                  <button
-                    type="button"
-                    onClick={retryActivity}
-                  >
-                    Retry
-                  </button>
-                </p>
-              ) : activity.length ? (
-                <ul aria-label="Recent contact activity" tabIndex={0}>
-                  {activity.map((item) => (
-                    <li key={item.id}>
-                      <strong>{formatActivityDescription(item, tags)}</strong>
-                      <span>{new Date(item.timestamp).toLocaleString()}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No activity recorded.</p>
-              )}
-            </section>
+            <ActivityList
+              activity={activity}
+              loading={activityLoading}
+              error={activityError}
+              tags={tags}
+              onRetry={retryActivity}
+            />
           ) : null}
 
           <div className={styles.dialogActions}>
