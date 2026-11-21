@@ -18,6 +18,12 @@ const jsonRequest = (url: string, method: string, body: unknown) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+const malformedJsonRequest = (url: string, method: string) =>
+  new Request(`http://localhost${url}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: "{",
+  });
 
 describe("contact mutation routes", () => {
   afterAll(async () => {
@@ -28,6 +34,31 @@ describe("contact mutation routes", () => {
       await db.delete(contacts).where(eq(contacts.id, secondCreatedId));
     }
     await pool.end();
+  });
+
+  it("returns INVALID_JSON for malformed contact and tag mutation bodies", async () => {
+    const id = "00000000-0000-4000-8000-000000000001";
+    const responses = [
+      await createContact(malformedJsonRequest("/api/contacts", "POST")),
+      await updateContact(
+        malformedJsonRequest(`/api/contacts/${id}`, "PATCH"),
+        routeContext(id),
+      ),
+      await replaceTags(
+        malformedJsonRequest(`/api/contacts/${id}/tags`, "PUT"),
+        routeContext(id),
+      ),
+    ];
+
+    for (const response of responses) {
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: {
+          code: "INVALID_JSON",
+          message: "Request body must be valid JSON.",
+        },
+      });
+    }
   });
 
   it("creates contacts and rejects duplicate normalized emails and phone numbers", async () => {

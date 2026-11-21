@@ -4,6 +4,7 @@ import {
   notFoundResponse,
   validationErrorResponse,
 } from "@/lib/api/responses";
+import { parseJsonBody } from "@/lib/api/request";
 import { getContact } from "@/lib/contacts/service";
 import { updateContact } from "@/lib/contacts/repository";
 import {
@@ -41,14 +42,12 @@ export async function PATCH(
     return validationErrorResponse(parsedId.error);
   }
 
-  let payload: unknown;
-  try {
-    payload = await request.json();
-  } catch {
-    payload = {};
+  const body = await parseJsonBody(request);
+  if (!body.success) {
+    return Response.json({ error: body.error }, { status: 400 });
   }
 
-  const parsed = contactUpdateSchema.safeParse(payload);
+  const parsed = contactUpdateSchema.safeParse(body.data);
   if (!parsed.success) {
     return validationErrorResponse(parsed.error);
   }
