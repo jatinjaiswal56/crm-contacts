@@ -22,6 +22,7 @@ import {
 import styles from "./contacts-workspace.module.css";
 import { FormField } from "./form-field";
 import { useFocusTrap } from "./use-focus-trap";
+import { useUnsavedChangesGuard } from "./use-unsaved-changes-guard";
 
 export type EditableContact = {
   id?: string;
@@ -350,19 +351,12 @@ export function ContactDialog({
     }
   }
 
-  const requestClose = useCallback(() => {
-    if (saving) {
-      onClose();
-      return;
-    }
-    if (
-      hasUnsavedChanges &&
-      !window.confirm("You have unsaved changes. Discard them and close?")
-    ) {
-      return;
-    }
-    onClose();
-  }, [hasUnsavedChanges, onClose, saving]);
+  const requestClose = useUnsavedChangesGuard({
+    open,
+    hasUnsavedChanges,
+    saving,
+    onClose,
+  });
 
   useEffect(() => {
     if (!open || !baseContact?.id) return;
@@ -398,16 +392,6 @@ export function ContactDialog({
       });
     return () => controller.abort();
   }, [activityRefreshKey, baseContact?.id, onError, open]);
-
-  useEffect(() => {
-    if (!open || !hasUnsavedChanges) return;
-    const preventLeaving = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", preventLeaving);
-    return () => window.removeEventListener("beforeunload", preventLeaving);
-  }, [hasUnsavedChanges, open]);
 
   function useLatestConflict() {
     if (!conflict) return;
