@@ -144,6 +144,10 @@ export function ContactsWorkspace() {
 
       const nextQuery = nextParams.toString();
       const href = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      if (nextQuery !== queryString) {
+        setSelectedIds([]);
+        setBulkTagIds([]);
+      }
 
       if (historyMode === "replace") {
         router.replace(href, { scroll: false });
@@ -254,6 +258,14 @@ export function ContactsWorkspace() {
                 ]),
               )
             : bulkTagIds;
+        const currentTagIds = selectedContact.tags.map((tag) => tag.id);
+        if (
+          tagIds.length === currentTagIds.length &&
+          tagIds.every((tagId) => currentTagIds.includes(tagId))
+        ) {
+          continue;
+        }
+
         const response = await fetch(`/api/contacts/${contactId}/tags`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -277,7 +289,10 @@ export function ContactsWorkspace() {
       }
       setSelectedIds([]);
       setBulkTagIds([]);
-      notifyToast("Tags updated successfully.", "success");
+      notifyToast(
+        updatedAny ? "Tags updated successfully." : "Tags are already up to date.",
+        "success",
+      );
     } catch (bulkError) {
       setBulkError(
         bulkError instanceof Error
