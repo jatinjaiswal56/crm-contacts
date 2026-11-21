@@ -1,0 +1,38 @@
+.tagFieldset {
+  min-height: 40px;
+  border: 1px solid #dfe4ec;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.tagFieldset {
+  min-height: 0;
+  padding: 10px 12px 12px;
+}
+
+.tagFieldset legend {
+  padding: 0 5px;
+  color: #536176;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tagHelp {
+  margin: -2px 0 9px;
+  color: #79869a;
+  font-size: 10px;
+}
+
+.tagChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagChoices label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #536176;
+  font-size: 12px;
+}

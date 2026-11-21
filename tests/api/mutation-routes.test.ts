@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { POST as createContact } from "../../src/app/api/contacts/route";
 import { PATCH as updateContact } from "../../src/app/api/contacts/[id]/route";
 import { PUT as replaceTags } from "../../src/app/api/contacts/[id]/tags/route";
-import { db, pool } from "../../src/lib/db/client";
+import { getDb, getPool } from "../../src/lib/db/client";
 import { contactActivities, contacts, tags } from "../../src/lib/db/schema";
 
 const uniqueEmail = "mutation-test@example.com";
@@ -32,15 +32,15 @@ const malformedJsonRequest = (url: string, method: string) =>
 describe("contact mutation routes", () => {
   afterAll(async () => {
     if (createdId) {
-      await db.delete(contacts).where(eq(contacts.id, createdId));
+      await getDb().delete(contacts).where(eq(contacts.id, createdId));
     }
     if (secondCreatedId) {
-      await db.delete(contacts).where(eq(contacts.id, secondCreatedId));
+      await getDb().delete(contacts).where(eq(contacts.id, secondCreatedId));
     }
     if (concurrentCreatedId) {
-      await db.delete(contacts).where(eq(contacts.id, concurrentCreatedId));
+      await getDb().delete(contacts).where(eq(contacts.id, concurrentCreatedId));
     }
-    await pool.end();
+    await getPool().end();
   });
 
   it("returns INVALID_JSON for malformed contact and tag mutation bodies", async () => {
@@ -69,8 +69,8 @@ describe("contact mutation routes", () => {
   });
 
   it("creates contacts and rejects duplicate normalized emails and phone numbers", async () => {
-    await db.delete(contacts).where(eq(contacts.emailNormalized, uniqueEmail));
-    await db.delete(contacts).where(eq(contacts.emailNormalized, secondUniqueEmail));
+    await getDb().delete(contacts).where(eq(contacts.emailNormalized, uniqueEmail));
+    await getDb().delete(contacts).where(eq(contacts.emailNormalized, secondUniqueEmail));
 
     const invalid = await createContact(
       jsonRequest("/api/contacts", "POST", {
@@ -107,7 +107,7 @@ describe("contact mutation routes", () => {
     expect(created.status).toBe(201);
     expect(createdBody.item.phone).toBe("+91 7000000010");
     createdId = createdBody.item.id;
-    const creationActivities = await db
+    const creationActivities = await getDb()
       .select()
       .from(contactActivities)
       .where(eq(contactActivities.contactId, createdId));
@@ -188,7 +188,7 @@ describe("contact mutation routes", () => {
     expect(firstUpdate.status).toBe(200);
     const firstUpdateBody = await firstUpdate.json();
     expect(firstUpdateBody.item.tags).toEqual([]);
-    const updateActivities = await db
+    const updateActivities = await getDb()
       .select()
       .from(contactActivities)
       .where(eq(contactActivities.contactId, createdId!));
@@ -220,7 +220,7 @@ describe("contact mutation routes", () => {
   });
 
   it("allows only one concurrent update for the same contact version", async () => {
-    await db
+    await getDb()
       .delete(contacts)
       .where(eq(contacts.emailNormalized, concurrentUniqueEmail));
 
@@ -268,7 +268,7 @@ describe("contact mutation routes", () => {
 
   it("replaces tags transactionally", async () => {
     expect(createdId).not.toBeNull();
-    const availableTags = await db.select().from(tags).limit(2);
+    const availableTags = await getDb().select().from(tags).limit(2);
     expect(availableTags.length).toBeGreaterThan(0);
 
     const staleResponse = await replaceTags(
@@ -292,7 +292,7 @@ describe("contact mutation routes", () => {
     );
     expect(response.status).toBe(200);
     expect((await response.json()).item.version).toBe(3);
-    const addedActivities = await db
+    const addedActivities = await getDb()
       .select()
       .from(contactActivities)
       .where(eq(contactActivities.contactId, createdId!));
@@ -313,7 +313,7 @@ describe("contact mutation routes", () => {
     );
     expect(removedResponse.status).toBe(200);
     expect((await removedResponse.json()).item.version).toBe(4);
-    const removedActivities = await db
+    const removedActivities = await getDb()
       .select()
       .from(contactActivities)
       .where(eq(contactActivities.contactId, createdId!));

@@ -1,0 +1,311 @@
+.dialogBackdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 23 42 / 42%);
+  animation: backdropIn 160ms ease-out;
+}
+
+.dialog {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  border: 1px solid #e1e6ef;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgb(15 23 42 / 24%);
+  animation: dialogIn 180ms ease-out;
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.dialogHeader h2 {
+  margin: 3px 0 0;
+  color: #17233b;
+  font-size: 20px;
+}
+
+.dialogEyebrow {
+  margin: 0;
+  color: #315be8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dialogClose {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #e1e6ef;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.dialogForm {
+  display: grid;
+  gap: 16px;
+  padding: 18px 22px 22px;
+}
+
+.dialogFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dialogFields label {
+  display: grid;
+  gap: 6px;
+  color: #536176;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.requiredMarker {
+  margin-left: 3px;
+  color: #c43b3b;
+}
+
+.dialogFields input[aria-invalid="true"] {
+  border-color: #d84c4c;
+  box-shadow: 0 0 0 2px rgb(216 76 76 / 10%);
+}
+
+.phoneInput {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  padding-left: 10px;
+  border: 1px solid #dfe4ec;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.invalidPhoneInput {
+  border-color: #d84c4c;
+  box-shadow: 0 0 0 2px rgb(216 76 76 / 10%);
+}
+
+.phonePrefix {
+  padding-right: 8px;
+  border-right: 1px solid #e1e6ef;
+  color: #536176;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.dialogFields .phoneInput input {
+  min-width: 0;
+  min-height: 38px;
+  padding-left: 9px;
+  border: 0;
+  box-shadow: none;
+}
+
+.dialogFields .phoneInput input:focus {
+  outline: none;
+}
+
+.fieldError {
+  color: #b42323;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.validationSummary {
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid #f1d0d0;
+  border-radius: 8px;
+  color: #8a3333;
+  background: #fff7f7;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.dialogFields input {
+  min-height: 40px;
+  border: 1px solid #dfe4ec;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.dialogFields input {
+  width: 100%;
+  padding: 0 10px;
+  color: #233149;
+}
+
+.dialogFullField {
+  grid-column: 1 / -1;
+}
+
+.conflictSection {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid #efcdab;
+  border-radius: 10px;
+  color: #66451f;
+  background: #fff9f0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.conflictSection h3,
+.conflictSection p {
+  margin: 0;
+}
+
+.conflictSection h3 {
+  color: #704316;
+  font-size: 13px;
+}
+
+.conflictCompare {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #f0dfc8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.conflictCompare table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.conflictCompare th,
+.conflictCompare td {
+  min-width: 110px;
+  padding: 7px 9px;
+  border-bottom: 1px solid #f2e9dd;
+  color: #5e6572;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.conflictCompare thead th,
+.conflictCompare tbody th {
+  color: #704316;
+  font-weight: 700;
+}
+
+.conflictActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.conflictActions button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid #e3c9a8;
+  border-radius: 8px;
+  color: #704316;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.conflictActions .dialogPrimary {
+  border-color: #315be8;
+  color: #fff;
+  background: #315be8;
+}
+
+.conflictActions button:focus-visible,
+.dialogClose:focus-visible,
+.dialogActions button:focus-visible {
+  outline: 3px solid rgb(49 91 232 / 28%);
+  outline-offset: 2px;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dialogActions button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid #dfe4ec;
+  border-radius: 8px;
+  color: #536176;
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dialogActions .dialogPrimary {
+  border-color: #315be8;
+  color: #fff;
+  background: #315be8;
+}
+
+.dialogActions button:disabled {
+  cursor: not-allowed;
+}
+
+.dialogActions .dialogPrimary:disabled {
+  border-color: #475569;
+  color: #fff;
+  background: #475569;
+}
+
+@media (max-width: 740px) {
+  .dialogFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dialogFullField {
+    grid-column: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogBackdrop,
+  .dialog {
+    animation: none;
+  }
+}
+
+@keyframes backdropIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+@keyframes dialogIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
