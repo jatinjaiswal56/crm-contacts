@@ -8,12 +8,10 @@ import {
   type FormEvent,
 } from "react";
 import { LoaderCircle, X } from "lucide-react";
-import { z } from "zod";
 import {
   mergeContactDraft,
   mergeContactTagDraft,
 } from "@/lib/contacts/conflict-merge";
-import { getApiErrorMessage } from "@/lib/api/error-schema";
 import { zodToFormikErrors } from "@/lib/forms/zod-formik";
 import {
   contactWriteFieldsSchema,
@@ -27,6 +25,12 @@ import { useContactActivity } from "./use-contact-activity";
 import { ActivityList } from "./activity-list";
 import { ConflictPanel, type ContactConflict } from "./conflict-panel";
 import { TagPicker, type Tag } from "./tag-picker";
+import { getIndianPhoneDigits, toFormValues } from "./contact-form-values";
+import {
+  saveContactFields,
+  saveContactTags,
+  type RequestFailure,
+} from "./contact-requests";
 
 export type EditableContact = {
   id?: string;
@@ -47,47 +51,6 @@ type Props = {
   onError: (message: string) => void;
   onSaved: (message: string) => void;
 };
-
-const mutationItemSchema = z.object({
-  id: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  email: z.string().nullable(),
-  phone: z.string().nullable(),
-  company: z.string().nullable(),
-  version: z.number(),
-});
-
-const conflictPayloadSchema = z.object({
-  error: z.object({
-    code: z.literal("VERSION_CONFLICT"),
-    message: z.string(),
-  }),
-  latest: mutationItemSchema.extend({
-    tags: z.array(z.object({ id: z.string(), name: z.string() })),
-  }),
-});
-
-function getIndianPhoneDigits(value: string | null) {
-  if (!value) return "";
-  const digits = value.replace(/\D/g, "");
-
-  if (digits.length === 10) return digits;
-  if (value.trim().startsWith("+91") && digits.length === 12) {
-    return digits.slice(2);
-  }
-  return "";
-}
-
-function toFormValues(contact: EditableContact | null): ContactWriteFields {
-  return {
-    firstName: contact?.firstName ?? "",
-    lastName: contact?.lastName ?? "",
-    email: contact?.email ?? "",
-    phone: getIndianPhoneDigits(contact?.phone ?? null),
-    company: contact?.company ?? "",
-  };
-}
 
 export function ContactDialog({
   contact,
@@ -122,6 +85,18 @@ export function ContactDialog({
     onError,
   });
 
+  const reportFailure = useCallback(
+    (failure: RequestFailure) => {
+      if (failure.status === "conflict") {
+        setConflict(failure.conflict);
+        onError(failure.conflict.message);
+        return;
+      }
+      onError(failure.message);
+    },
+    [onError],
+  );
+
   const submitContact = useCallback(
     async (
       values: ContactWriteFields,
@@ -140,48 +115,20 @@ export function ContactDialog({
         let savedId = baseContact?.id;
         let savedVersion = baseContact?.version ?? 1;
         if (contactFieldsChanged) {
-          const body = {
-            ...values,
-            ...(baseContact?.id ? { expectedVersion: baseContact.version ?? 1 } : {}),
-          };
-          const response = await fetch(
-            baseContact?.id ? `/api/contacts/${baseContact.id}` : "/api/contacts",
-            {
-              method: baseContact?.id ? "PATCH" : "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            },
-          );
-          const payload: unknown = await response.json().catch(() => null);
-          if (!response.ok) {
-            const parsedConflict = conflictPayloadSchema.safeParse(payload);
-            if (
-              parsedConflict.success &&
-              parsedConflict.data.error.code === "VERSION_CONFLICT"
-            ) {
-              const { latest, error } = parsedConflict.data;
-              setConflict({ latest, message: error.message });
-              onError(error.message);
-              return;
-            }
-            const message = getApiErrorMessage(
-              payload,
-              "Could not save contact.",
-            );
-            onError(message);
+          const result = await saveContactFields({
+            contactId: baseContact?.id,
+            expectedVersion: baseContact?.version ?? 1,
+            values,
+          });
+          if (result.status !== "ok") {
+            reportFailure(result);
             return;
           }
 
-          const savedContact = mutationItemSchema.safeParse(
-            (payload as { item?: unknown } | null)?.item,
-          );
-          if (!savedContact.success) {
-            throw new Error("The contacts service returned an invalid response.");
-          }
-          savedId = savedContact.data.id;
-          savedVersion = savedContact.data.version;
+          savedId = result.data.id;
+          savedVersion = result.data.version;
           const nextBaseContact: EditableContact = {
-            ...savedContact.data,
+            ...result.data,
             tags: baseContact?.tags ?? [],
           };
           if (!baseContact?.id) {
@@ -198,29 +145,14 @@ export function ContactDialog({
         const shouldSaveTags =
           tagsDirty || (!baseContact?.id && selectedTagIds.length > 0);
         if (shouldSaveTags) {
-          const tagResponse = await fetch(`/api/contacts/${savedId}/tags`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              tagIds: selectedTagIds,
-              expectedVersion: savedVersion,
-            }),
+          const result = await saveContactTags({
+            contactId: savedId,
+            expectedVersion: savedVersion,
+            tagIds: selectedTagIds,
           });
-          const tagPayload: unknown = await tagResponse.json().catch(() => null);
-          if (!tagResponse.ok) {
-            const parsedConflict = conflictPayloadSchema.safeParse(tagPayload);
-            if (
-              parsedConflict.success &&
-              parsedConflict.data.error.code === "VERSION_CONFLICT"
-            ) {
-              const { latest, error } = parsedConflict.data;
-              setConflict({ latest, message: error.message });
-              onError(error.message);
-              return;
-            }
-            throw new Error(
-              getApiErrorMessage(tagPayload, "Could not save tags."),
-            );
+          if (result.status !== "ok") {
+            reportFailure(result);
+            return;
           }
         }
 
@@ -246,6 +178,7 @@ export function ContactDialog({
       onClose,
       onError,
       onSaved,
+      reportFailure,
       selectedTagIds,
       tagsDirty,
     ],
