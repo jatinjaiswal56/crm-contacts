@@ -18,7 +18,7 @@ import {
   type ContactWriteFields,
 } from "@/lib/contacts/validation";
 import styles from "./contacts-workspace.module.css";
-import { FormField } from "./form-field";
+import { ContactFields } from "./contact-fields";
 import { useFocusTrap } from "./use-focus-trap";
 import { useUnsavedChangesGuard } from "./use-unsaved-changes-guard";
 import { useContactActivity } from "./use-contact-activity";
@@ -293,76 +293,7 @@ export function ContactDialog({
           aria-busy={saving}
           noValidate
         >
-          <div className={styles.dialogFields}>
-            <FormField
-              name="firstName"
-              label="First name"
-              value={formik.values.firstName}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              disabled={saving}
-              maxLength={80}
-              error={
-                formik.touched.firstName ? formik.errors.firstName : undefined
-              }
-              initialFocus
-            />
-            <FormField
-              name="lastName"
-              label="Last name"
-              value={formik.values.lastName}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              disabled={saving}
-              maxLength={80}
-              error={
-                formik.touched.lastName ? formik.errors.lastName : undefined
-              }
-            />
-            <FormField
-              name="email"
-              label="Email"
-              type="email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              disabled={saving}
-              maxLength={254}
-              error={formik.touched.email ? formik.errors.email : undefined}
-            />
-            <FormField
-              name="phone"
-              label="Phone"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel-national"
-              value={formik.values.phone}
-              onChange={(event) =>
-                formik.setFieldValue(
-                  "phone",
-                  event.target.value.replace(/\D/g, "").slice(0, 10),
-                )
-              }
-              onBlur={formik.handleBlur}
-              disabled={saving}
-              maxLength={10}
-              pattern="[6-9][0-9]{9}"
-              ariaLabel="10-digit Indian mobile number"
-              error={formik.touched.phone ? formik.errors.phone : undefined}
-              prefix="+91"
-            />
-            <FormField
-              name="company"
-              label="Company"
-              value={formik.values.company}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              disabled={saving}
-              maxLength={120}
-              error={formik.touched.company ? formik.errors.company : undefined}
-              fullWidth
-            />
-          </div>
+          <ContactFields formik={formik} disabled={saving} />
 
           {formik.submitCount > 0 && validationErrorCount > 0 ? (
             <p className={styles.validationSummary} role="alert">
