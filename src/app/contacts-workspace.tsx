@@ -125,7 +125,7 @@ export function ContactsWorkspace() {
   );
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast || toast.tone !== "success") return;
     const timeout = window.setTimeout(() => setToast(null), 5000);
     return () => window.clearTimeout(timeout);
   }, [toast]);
