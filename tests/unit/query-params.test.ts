@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeContactQuery } from "../src/lib/contacts/query-params";
+import { sanitizeContactQuery } from "../../src/lib/contacts/query-params";
 
 describe("sanitizeContactQuery", () => {
   it("keeps supported filters in a stable order and removes unknown keys", () => {
