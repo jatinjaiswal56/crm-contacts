@@ -5,6 +5,7 @@ import {
 } from "@/lib/api/responses";
 import { parseJsonBody } from "@/lib/api/request";
 import { getContact, listContacts } from "@/lib/contacts/service";
+import { toContactWriteValues } from "@/lib/contacts/normalize";
 import { createContact } from "@/lib/contacts/repository";
 import {
   contactWriteFieldsSchema,
@@ -36,13 +37,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await createContact({
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      email: parsed.data.email ?? null,
-      phone: `+91 ${parsed.data.phone}`,
-      company: parsed.data.company ?? null,
-    });
+    const result = await createContact(toContactWriteValues(parsed.data));
 
     if (result.kind === "duplicate") {
       return conflictResponse(
