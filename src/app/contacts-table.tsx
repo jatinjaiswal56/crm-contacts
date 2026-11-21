@@ -1,5 +1,6 @@
 import { LoaderCircle, Pencil, UsersRound } from "lucide-react";
-import styles from "./contacts-workspace.module.css";
+import styles from "./contacts-table.module.css";
+import shared from "./shared.module.css";
 import type { ContactListResponse } from "./use-contact-directory";
 
 export type ContactRow = ContactListResponse["items"][number];
@@ -52,7 +53,7 @@ export function ContactsTable({
           aria-label="Loading contacts"
         >
           <LoaderCircle
-            className={styles.spinning}
+            className={shared.spinning}
             size={22}
             aria-hidden="true"
           />
@@ -93,7 +94,7 @@ export function ContactsTable({
             <thead>
               <tr>
                 <th scope="col" className={styles.selectColumn}>
-                  <span className={styles.visuallyHidden}>Select</span>
+                  <span className={shared.visuallyHidden}>Select</span>
                 </th>
                 <th scope="col">Contact</th>
                 <th scope="col">Company</th>
@@ -101,7 +102,7 @@ export function ContactsTable({
                 <th scope="col">Tags</th>
                 <th scope="col">Updated</th>
                 <th scope="col" className={styles.actionsColumn}>
-                  <span className={styles.visuallyHidden}>Actions</span>
+                  <span className={shared.visuallyHidden}>Actions</span>
                 </th>
               </tr>
             </thead>

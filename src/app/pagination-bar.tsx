@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import styles from "./contacts-workspace.module.css";
+import styles from "./pagination-bar.module.css";
 import type { ContactListResponse } from "./use-contact-directory";
 
 type Props = {

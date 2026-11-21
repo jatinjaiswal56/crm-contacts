@@ -1,5 +1,6 @@
 import { LoaderCircle, Plus, UsersRound } from "lucide-react";
-import styles from "./contacts-workspace.module.css";
+import styles from "./contacts-header.module.css";
+import shared from "./shared.module.css";
 
 type PageHeaderProps = {
   total: number | undefined;
@@ -57,7 +58,7 @@ export function ContactsListHeader({ total, isRefreshing }: ListHeaderProps) {
         {isRefreshing ? (
           <>
             <LoaderCircle
-              className={styles.spinning}
+              className={shared.spinning}
               size={15}
               aria-hidden="true"
             />

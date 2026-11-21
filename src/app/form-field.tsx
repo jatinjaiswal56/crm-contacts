@@ -4,7 +4,7 @@ import type {
   InputHTMLAttributes,
 } from "react";
 import type { ContactWriteFields } from "@/lib/contacts/validation";
-import styles from "./contacts-workspace.module.css";
+import styles from "./contact-dialog.module.css";
 
 type Props = {
   name: keyof ContactWriteFields;
