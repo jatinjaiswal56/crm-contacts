@@ -1,45 +1,25 @@
 "use client";
 
 import {
-  Building2,
   ChevronLeft,
   ChevronRight,
-  Filter,
   LoaderCircle,
   Pencil,
   Plus,
-  Search,
-  Tag,
   UsersRound,
   X,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getApiErrorMessage } from "@/lib/api/error-schema";
 import styles from "./contacts-workspace.module.css";
 import { ContactDialog, type EditableContact } from "./contact-dialog";
+import { ContactFilters, SortToolbar, sortOptions } from "./contact-filters";
 import {
   useContactDirectory,
   type ContactListResponse,
 } from "./use-contact-directory";
 import { useQueryDraft } from "./use-query-draft";
-
-const sortOptions = [
-  { value: "name:asc", label: "Name: A to Z", sort: "name", order: "asc" },
-  { value: "name:desc", label: "Name: Z to A", sort: "name", order: "desc" },
-  {
-    value: "createdAt:desc",
-    label: "Recently added",
-    sort: "createdAt",
-    order: "desc",
-  },
-  {
-    value: "createdAt:asc",
-    label: "Oldest added",
-    sort: "createdAt",
-    order: "asc",
-  },
-] as const;
 
 type QueryUpdate = Record<string, string | null>;
 
@@ -164,8 +144,7 @@ export function ContactsWorkspace() {
     return () => window.clearTimeout(timeout);
   }, [markSearchPushed, searchParam, searchText, updateSearchParams]);
 
-  function applyFilters(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function applyFilters() {
     updateSearchParams({
       search: searchText.trim() || null,
       company: companyText.trim() || null,
@@ -384,98 +363,26 @@ export function ContactsWorkspace() {
             </div>
           </div>
 
-          <form className={styles.filters} onSubmit={applyFilters}>
-            <label className={styles.searchField}>
-              <Search size={18} aria-hidden="true" />
-              <span className={styles.visuallyHidden}>Search contacts</span>
-              <input
-                type="search"
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                placeholder="Search names, emails, or companies"
-                autoComplete="off"
-              />
-            </label>
+          <ContactFilters
+            searchText={searchText}
+            companyText={companyText}
+            selectedTag={selectedTag}
+            onSearchTextChange={setSearchText}
+            onCompanyTextChange={setCompanyText}
+            onSelectedTagChange={setSelectedTag}
+            tags={tags}
+            isTagsLoading={isTagsLoading}
+            tagsError={tagsError}
+            hasActiveFilters={hasActiveFilters}
+            onApply={applyFilters}
+            onClear={clearFilters}
+          />
 
-            <label className={styles.filterField}>
-              <span className={styles.filterLabel}>
-                <Building2 size={15} aria-hidden="true" />
-                Company
-              </span>
-              <input
-                type="text"
-                value={companyText}
-                onChange={(event) => setCompanyText(event.target.value)}
-                placeholder="Any company"
-              />
-            </label>
-
-            <label className={styles.filterField}>
-              <span className={styles.filterLabel}>
-                <Tag size={15} aria-hidden="true" />
-                Tag
-              </span>
-              <select
-                value={selectedTag}
-                onChange={(event) => setSelectedTag(event.target.value)}
-                aria-label="Filter by tag"
-              >
-                <option value="">
-                  {isTagsLoading ? "Loading tags…" : "All tags"}
-                </option>
-                {selectedTag &&
-                !tags.some((tag) => tag.nameNormalized === selectedTag) ? (
-                  <option value={selectedTag}>{selectedTag}</option>
-                ) : null}
-                {tags.map((tag) => (
-                  <option key={tag.id} value={tag.nameNormalized}>
-                    {tag.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <button className={styles.applyButton} type="submit">
-              <Filter size={16} aria-hidden="true" />
-              Apply filters
-            </button>
-            {hasActiveFilters ? (
-              <button
-                className={styles.clearButton}
-                type="button"
-                onClick={clearFilters}
-              >
-                <X size={15} aria-hidden="true" />
-                Clear
-              </button>
-            ) : null}
-          </form>
-
-          {tagsError ? (
-            <p className={styles.inlineError} role="alert">
-              Tag filters are unavailable: {tagsError}
-            </p>
-          ) : null}
-
-          <div className={styles.tableToolbar}>
-            <p className={styles.tableHint}>
-              {hasActiveFilters ? "Filtered results" : "Your contact directory"}
-            </p>
-            <label className={styles.sortControl}>
-              <span>Sort by</span>
-              <select
-                value={selectedSort}
-                onChange={(event) => changeSort(event.target.value)}
-                aria-label="Sort contacts"
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <SortToolbar
+            hasActiveFilters={hasActiveFilters}
+            selectedSort={selectedSort}
+            onSortChange={changeSort}
+          />
 
           {selectedIds.length ? (
             <div className={styles.bulkToolbar} aria-label="Bulk tag actions">
