@@ -14,7 +14,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ContactDialog,
   type EditableContact,
-} from "../../src/app/contact-dialog";
+} from "@/features/contacts/components/dialog/contact-dialog";
 
 const availableTags = [
   { id: "vip", name: "VIP", nameNormalized: "vip" },

@@ -1,17 +1,17 @@
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 import type { FormikHelpers } from "formik";
 import type { ContactWriteFields } from "@/lib/contacts/validation";
-import type { ContactConflict } from "./conflict-panel";
+import type { ContactConflict } from "@/features/contacts/components/dialog/conflict-panel";
 import {
   getIndianPhoneDigits,
   toFormValues,
   type EditableContact,
-} from "./contact-form-values";
+} from "@/features/contacts/utils/contact-form-values";
 import {
   saveContactFields,
   saveContactTags,
   type RequestFailure,
-} from "./contact-requests";
+} from "@/features/contacts/requests/contact-requests";
 
 type Options = {
   baseContact: EditableContact | null;

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getApiErrorMessage } from "@/lib/api/error-schema";
 import type { ContactWriteFields } from "@/lib/contacts/validation";
-import type { ContactConflict } from "./conflict-panel";
+import type { ContactConflict } from "@/features/contacts/components/dialog/conflict-panel";
 
 const mutationItemSchema = z.object({
   id: z.string(),

@@ -1,7 +1,7 @@
 import { LoaderCircle, Pencil, UsersRound } from "lucide-react";
 import styles from "./contacts-table.module.css";
-import shared from "./shared.module.css";
-import type { ContactListResponse } from "./use-contact-directory";
+import shared from "@/components/ui/shared.module.css";
+import type { ContactListResponse } from "@/features/contacts/hooks/use-contact-directory";
 
 export type ContactRow = ContactListResponse["items"][number];
 

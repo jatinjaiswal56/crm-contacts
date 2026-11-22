@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { getApiErrorMessage } from "@/lib/api/error-schema";
-import type { BulkTagMode } from "./bulk-tag-toolbar";
-import type { ContactRow } from "./contacts-table";
+import type { BulkTagMode } from "@/features/contacts/components/bulk-tags/bulk-tag-toolbar";
+import type { ContactRow } from "@/features/contacts/components/table/contacts-table";
 
 /** Tag ids a contact should end up with; `null` when nothing would change. */
 export function getBulkTagTarget(

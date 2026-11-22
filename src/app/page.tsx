@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { ContactsWorkspace } from "./contacts-workspace";
+import { ContactsWorkspace } from "@/features/contacts/components/workspace/contacts-workspace";
 
 export default function Home() {
   return (

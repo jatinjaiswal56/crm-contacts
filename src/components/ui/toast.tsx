@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import styles from "./toast.module.css";
-import type { ToastState } from "./use-toast";
+import type { ToastState } from "@/hooks/use-toast";
 
 type Props = {
   toast: ToastState | null;

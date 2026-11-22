@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import styles from "./pagination-bar.module.css";
-import type { ContactListResponse } from "./use-contact-directory";
+import type { ContactListResponse } from "@/features/contacts/hooks/use-contact-directory";
 
 type Props = {
   pagination: ContactListResponse["pagination"] | undefined;

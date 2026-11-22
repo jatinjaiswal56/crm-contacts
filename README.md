@@ -53,9 +53,28 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, unit/UI tests, then starts
 
 ## Structure and technical decisions
 
-- **Page wiring.** `src/app/contacts-workspace.tsx` owns URL state (search, filters, sort, page) and wires it to presentational components: `ContactFilters`, `ContactsTable`, `PaginationBar`, `BulkTagToolbar`, `Toast`. Each component has its own CSS module; `shared.module.css` holds the few cross-component utilities.
+```
+src/
+├── app/                        # routing only: page.tsx, layout.tsx, globals.css
+│   └── api/                    # REST route handlers (route.ts per URL)
+├── features/contacts/          # everything for the contacts screen
+│   ├── components/
+│   │   ├── workspace/          # ContactsWorkspace (URL state + wiring), headers
+│   │   ├── filters/            # search, company, tag, sort
+│   │   ├── table/              # table / mobile cards, pagination
+│   │   ├── bulk-tags/          # bulk tag toolbar
+│   │   └── dialog/             # create/edit dialog, fields, tag picker, conflict panel, activity
+│   ├── hooks/                  # useContactDirectory, useBulkTagging, useContactSubmit, ...
+│   ├── requests/               # browser -> API calls (contact-requests.ts)
+│   └── utils/                  # stored value <-> form value mapping
+├── components/ui/              # reusable UI: Toast, shared styles
+├── hooks/                      # reusable hooks: useToast, useFocusTrap, useUnsavedChangesGuard
+└── lib/                        # shared + server: validation, normalization, repository, db, API helpers
+```
+
+- **Page wiring.** `features/contacts/components/workspace/contacts-workspace.tsx` owns URL state (search, filters, sort, page) and wires it to presentational components: `ContactFilters`, `ContactsTable`, `PaginationBar`, `BulkTagToolbar`, `Toast`. Each component has its own CSS module; `src/components/ui/shared.module.css` holds the few cross-component utilities.
 - **Data hooks.** `useContactDirectory` owns directory and tag reads, response validation, cancellation, and loading/error state. `useBulkTagging` owns row selection and bulk tag writes. `useQueryDraft` keeps input drafts in sync with the URL.
-- **Dialog.** `ContactDialog` composes `ContactFields`, `TagPicker`, `ConflictPanel`, and `ActivityList`. Behavior lives in hooks: `useContactSubmit` (save flow), `useFocusTrap`, `useUnsavedChangesGuard`, and `useContactActivity`. Requests and response parsing are in `contact-requests.ts`.
+- **Dialog.** `ContactDialog` composes `ContactFields`, `TagPicker`, `ConflictPanel`, and `ActivityList`. Behavior lives in hooks: `useContactSubmit` (save flow), `useFocusTrap`, `useUnsavedChangesGuard`, and `useContactActivity`. Requests and response parsing are in `features/contacts/requests/contact-requests.ts`.
 - **API.** Route Handlers validate HTTP input and map outcomes to status codes. `src/lib/contacts/service.ts` composes reads; `repository.ts` owns queries and transactions; `normalize.ts` is the single home for email/phone normalization. The DB client connects lazily on first use.
 - **URL as source of truth.** Search is debounced by 300 ms. Search, filters, sort, and page live in URL parameters, so views are shareable and survive refresh. Changing filters or sort resets the page. The client sanitizes URL params before calling the API, so a bad `page` or `sort` in a shared link still loads the list. The API ignores unknown params such as `utm_source`.
 - **Filtering.** Search matches name, email, and company. The company filter is a case-insensitive partial match. The tag filter matches a tag's normalized name.

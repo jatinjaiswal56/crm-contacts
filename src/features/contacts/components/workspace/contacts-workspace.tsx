@@ -3,17 +3,17 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import styles from "./contacts-workspace.module.css";
-import { ContactDialog, type EditableContact } from "./contact-dialog";
+import { ContactDialog, type EditableContact } from "@/features/contacts/components/dialog/contact-dialog";
 import { ContactsListHeader, ContactsPageHeader } from "./contacts-header";
-import { ContactFilters, SortToolbar, sortOptions } from "./contact-filters";
-import { ContactsTable, type ContactRow } from "./contacts-table";
-import { PaginationBar } from "./pagination-bar";
-import { BulkTagToolbar } from "./bulk-tag-toolbar";
-import { Toast } from "./toast";
-import { useToast } from "./use-toast";
-import { useBulkTagging } from "./use-bulk-tagging";
-import { useContactDirectory } from "./use-contact-directory";
-import { useQueryDraft } from "./use-query-draft";
+import { ContactFilters, SortToolbar, sortOptions } from "@/features/contacts/components/filters/contact-filters";
+import { ContactsTable, type ContactRow } from "@/features/contacts/components/table/contacts-table";
+import { PaginationBar } from "@/features/contacts/components/table/pagination-bar";
+import { BulkTagToolbar } from "@/features/contacts/components/bulk-tags/bulk-tag-toolbar";
+import { Toast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
+import { useBulkTagging } from "@/features/contacts/hooks/use-bulk-tagging";
+import { useContactDirectory } from "@/features/contacts/hooks/use-contact-directory";
+import { useQueryDraft } from "@/features/contacts/hooks/use-query-draft";
 
 type QueryUpdate = Record<string, string | null>;
 

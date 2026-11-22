@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { getApiErrorMessage } from "../lib/api/error-schema";
-import { sanitizeContactQuery } from "../lib/contacts/query-params";
+import { getApiErrorMessage } from "@/lib/api/error-schema";
+import { sanitizeContactQuery } from "@/lib/contacts/query-params";
 
 const contactTagSchema = z.object({
   id: z.string(),

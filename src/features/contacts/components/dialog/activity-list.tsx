@@ -1,4 +1,4 @@
-import type { ActivityItem } from "./use-contact-activity";
+import type { ActivityItem } from "@/features/contacts/hooks/use-contact-activity";
 import styles from "./activity-list.module.css";
 import type { Tag } from "./tag-picker";
 

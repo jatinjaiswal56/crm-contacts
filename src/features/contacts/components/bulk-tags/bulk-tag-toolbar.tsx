@@ -1,7 +1,7 @@
 import { Check, LoaderCircle, X } from "lucide-react";
-import shared from "./shared.module.css";
+import shared from "@/components/ui/shared.module.css";
 import styles from "./bulk-tag-toolbar.module.css";
-import type { FilterTag } from "./use-contact-directory";
+import type { FilterTag } from "@/features/contacts/hooks/use-contact-directory";
 
 export type BulkTagMode = "add" | "replace";
 

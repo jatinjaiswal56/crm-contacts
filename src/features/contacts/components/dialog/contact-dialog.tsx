@@ -13,16 +13,16 @@ import {
   type ContactWriteFields,
 } from "@/lib/contacts/validation";
 import styles from "./contact-dialog.module.css";
-import shared from "./shared.module.css";
+import shared from "@/components/ui/shared.module.css";
 import { ContactFields } from "./contact-fields";
-import { useFocusTrap } from "./use-focus-trap";
-import { useUnsavedChangesGuard } from "./use-unsaved-changes-guard";
-import { useContactActivity } from "./use-contact-activity";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+import { useContactActivity } from "@/features/contacts/hooks/use-contact-activity";
 import { ActivityList } from "./activity-list";
 import { ConflictPanel, type ContactConflict } from "./conflict-panel";
 import { TagPicker, type Tag } from "./tag-picker";
-import { toFormValues, type EditableContact } from "./contact-form-values";
-import { useContactSubmit } from "./use-contact-submit";
+import { toFormValues, type EditableContact } from "@/features/contacts/utils/contact-form-values";
+import { useContactSubmit } from "@/features/contacts/hooks/use-contact-submit";
 
 export type { EditableContact };
 

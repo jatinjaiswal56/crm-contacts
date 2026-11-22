@@ -12,8 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   ContactListResponse,
   FilterTag,
-} from "../../src/app/use-contact-directory";
-import { ContactsWorkspace } from "../../src/app/contacts-workspace";
+} from "@/features/contacts/hooks/use-contact-directory";
+import { ContactsWorkspace } from "@/features/contacts/components/workspace/contacts-workspace";
 
 const mocks = vi.hoisted(() => ({
   searchParams: "",
@@ -28,7 +28,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(mocks.searchParams),
 }));
 
-vi.mock("../../src/app/use-contact-directory", () => ({
+vi.mock("@/features/contacts/hooks/use-contact-directory", () => ({
   useContactDirectory: mocks.useContactDirectory,
 }));
 

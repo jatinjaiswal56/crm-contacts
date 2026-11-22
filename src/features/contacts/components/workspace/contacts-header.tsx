@@ -1,6 +1,6 @@
 import { LoaderCircle, Plus, UsersRound } from "lucide-react";
 import styles from "./contacts-header.module.css";
-import shared from "./shared.module.css";
+import shared from "@/components/ui/shared.module.css";
 
 type PageHeaderProps = {
   total: number | undefined;

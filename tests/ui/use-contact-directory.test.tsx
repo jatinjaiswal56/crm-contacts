@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   useContactDirectory,
   type ContactListResponse,
-} from "../../src/app/use-contact-directory";
+} from "@/features/contacts/hooks/use-contact-directory";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getBulkTagTarget } from "../../src/app/use-bulk-tagging";
+import { getBulkTagTarget } from "@/features/contacts/hooks/use-bulk-tagging";
 
 describe("getBulkTagTarget", () => {
   it("adds chosen tags without removing existing ones", () => {

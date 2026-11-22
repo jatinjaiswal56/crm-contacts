@@ -1,8 +1,8 @@
 import { Building2, Filter, Search, Tag, X } from "lucide-react";
 import type { FormEvent } from "react";
 import styles from "./contact-filters.module.css";
-import shared from "./shared.module.css";
-import type { FilterTag } from "./use-contact-directory";
+import shared from "@/components/ui/shared.module.css";
+import type { FilterTag } from "@/features/contacts/hooks/use-contact-directory";
 
 export const sortOptions = [
   { value: "name:asc", label: "Name: A to Z", sort: "name", order: "asc" },
