@@ -47,6 +47,26 @@ export function conflictResponse(
   );
 }
 
+export function duplicateContactResponse(field?: "email" | "phone") {
+  const message =
+    field === "email"
+      ? "A contact with this email already exists."
+      : field === "phone"
+        ? "A contact with this phone number already exists."
+        : "A contact with this email or phone number already exists.";
+
+  return conflictResponse("DUPLICATE_CONTACT", message);
+}
+
+export function isUniqueConstraintViolation(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "23505"
+  );
+}
+
 export function unprocessableEntityResponse(
   code: "INVALID_TAGS",
   message: string,

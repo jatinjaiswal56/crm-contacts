@@ -1,0 +1,239 @@
+.bulkToolbar {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 10px 24px;
+  border-bottom: 1px solid #dfe6fb;
+  background: #f4f7ff;
+  animation: toolbarIn 160ms ease-out;
+}
+
+.selectedCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #27344a;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.countBadge {
+  display: inline-grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: #fff;
+  background: #315be8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.divider {
+  width: 1px;
+  height: 22px;
+  background: #d6def3;
+}
+
+.modeControl select {
+  min-width: 132px;
+  min-height: 34px;
+  padding: 0 30px 0 11px;
+  border: 1px solid #dfe4ec;
+  border-radius: 9px;
+  outline: 0;
+  appearance: none;
+  color: #27344a;
+  background: #fff
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2368758a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 10px center / 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modeControl select:focus-visible {
+  border-color: #315be8;
+  box-shadow: 0 0 0 3px rgb(49 91 232 / 18%);
+}
+
+.tagFieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tagChip {
+  position: relative;
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 12px;
+  border: 1px solid #dfe4ec;
+  border-radius: 999px;
+  color: #40506b;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+  user-select: none;
+}
+
+/* The real checkbox stays in the accessibility tree and receives focus;
+   the chip itself is the visible control. */
+.tagChip input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chipCheck {
+  display: none;
+}
+
+.tagChip:hover {
+  border-color: #b9c8f6;
+  color: #315be8;
+}
+
+.tagChip:has(input:checked) {
+  border-color: #315be8;
+  color: #fff;
+  background: #315be8;
+}
+
+.tagChip:has(input:checked) .chipCheck {
+  display: block;
+}
+
+.tagChip:has(input:focus-visible) {
+  outline: 3px solid rgb(49 91 232 / 28%);
+  outline-offset: 2px;
+}
+
+.tagChip:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.applyButton,
+.clearButton {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.applyButton {
+  color: #fff;
+  background: #315be8;
+  box-shadow: 0 4px 10px rgb(49 91 232 / 15%);
+}
+
+.applyButton:hover:not(:disabled) {
+  background: #244bd3;
+}
+
+.clearButton {
+  padding: 0 10px;
+  color: #68758a;
+  background: transparent;
+}
+
+.clearButton:hover:not(:disabled) {
+  color: #315be8;
+  background: #e8eeff;
+}
+
+.applyButton:disabled,
+.clearButton:disabled {
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+.applyButton:focus-visible,
+.clearButton:focus-visible {
+  outline: 3px solid rgb(49 91 232 / 28%);
+  outline-offset: 2px;
+}
+
+@media (max-width: 740px) {
+  .bulkToolbar {
+    padding: 12px 16px;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .modeControl {
+    margin-left: auto;
+  }
+
+  .tagFieldset {
+    width: 100%;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .applyButton {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulkToolbar {
+    animation: none;
+  }
+
+  .tagChip {
+    transition: none;
+  }
+}
+
+@keyframes toolbarIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

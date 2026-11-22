@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { sanitizeContactQuery } from "../lib/contacts/query-params";
+import { getApiErrorMessage } from "@/lib/api/error-schema";
+import { sanitizeContactQuery } from "@/lib/contacts/query-params";
 
 const contactTagSchema = z.object({
   id: z.string(),
@@ -42,12 +43,6 @@ const tagListResponseSchema = z.object({
   ),
 });
 
-const apiErrorSchema = z.object({
-  error: z.object({
-    message: z.string(),
-  }),
-});
-
 export type ContactListResponse = z.infer<typeof contactListResponseSchema>;
 export type FilterTag = z.infer<typeof tagListResponseSchema>["items"][number];
 
@@ -57,11 +52,6 @@ async function readResponseJson(response: Response, fallback: string) {
   } catch {
     throw new Error(fallback);
   }
-}
-
-function getApiErrorMessage(payload: unknown, fallback: string) {
-  const parsed = apiErrorSchema.safeParse(payload);
-  return parsed.success ? parsed.data.error.message : fallback;
 }
 
 export function useContactDirectory(queryString: string, refreshKey: number) {
@@ -87,10 +77,12 @@ export function useContactDirectory(queryString: string, refreshKey: number) {
           ? `/api/contacts?${sanitizedQuery}`
           : "/api/contacts";
         const response = await fetch(url, { signal: controller.signal });
+        if (controller.signal.aborted) return;
         const payload = await readResponseJson(
           response,
           "The contacts service returned an unreadable response.",
         );
+        if (controller.signal.aborted) return;
 
         if (!response.ok) {
           throw new Error(

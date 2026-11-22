@@ -1,12 +1,13 @@
+import "./load-env";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { db, pool } from "../src/lib/db/client";
+import { getDb, getPool } from "../src/lib/db/client";
 
 async function main() {
   try {
-    await migrate(db, { migrationsFolder: "./drizzle" });
+    await migrate(getDb(), { migrationsFolder: "./drizzle" });
     console.info("PostgreSQL migrations applied.");
   } finally {
-    await pool.end();
+    await getPool().end();
   }
 }
 

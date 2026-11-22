@@ -1,0 +1,255 @@
+.pageHeader {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 0 24px;
+}
+
+.eyebrow {
+  margin: 0 0 9px;
+  color: #315be8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.pageHeader h1 {
+  margin: 0;
+  color: #17233b;
+  font-size: clamp(2rem, 4vw, 2.55rem);
+  letter-spacing: -0.055em;
+  line-height: 1.05;
+}
+
+.pageDescription {
+  margin: 10px 0 0;
+  color: #68758a;
+  font-size: 14px;
+}
+
+.totalCard {
+  display: grid;
+  min-width: 145px;
+  min-height: 56px;
+  grid-template-columns: 38px auto;
+  align-items: center;
+  column-gap: 11px;
+  padding: 8px 13px;
+  border: 1px solid #e6eaf0;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 84%);
+}
+
+.totalIcon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  grid-row: span 2;
+  place-items: center;
+  border-radius: 11px;
+  color: #315be8;
+  background: #edf1ff;
+}
+
+.totalValue {
+  align-self: end;
+  color: #17233b;
+  font-size: 20px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.totalLabel {
+  align-self: start;
+  margin-top: 4px;
+  color: #68758a;
+  font-size: 11px;
+}
+
+.panelHeader {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 23px 24px 18px;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  color: #17233b;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.panelHeader p {
+  margin: 5px 0 0;
+  color: #68758a;
+  font-size: 12px;
+}
+
+.matchCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #68758a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 740px) {
+  .pageHeader {
+    align-items: center;
+  }
+
+  .panelHeader {
+    padding: 18px 16px 15px;
+  }
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.createButton {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #315be8;
+  border-radius: 9px;
+  color: #fff;
+  background: #315be8;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.createButton {
+  padding: 0 14px;
+}
+
+@media (max-width: 480px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .pageHeader h1 {
+    font-size: 31px;
+  }
+
+  .pageDescription {
+    max-width: none;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .totalCard {
+    min-width: 0;
+    min-height: 52px;
+    grid-template-columns: 30px auto;
+    column-gap: 7px;
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+
+  .totalIcon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .totalValue {
+    font-size: 17px;
+  }
+
+  .totalLabel {
+    font-size: 9px;
+  }
+
+  .panelHeader {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .matchCount {
+    padding-top: 3px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .panelHeader {
+    padding: 14px 12px 12px;
+  }
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.createButton {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #315be8;
+  border-radius: 9px;
+  color: #fff;
+  background: #315be8;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.createButton {
+  min-height: 56px;
+  padding: 0 14px;
+  border-radius: 12px;
+}
+
+@media (max-width: 740px) {
+  .headerActions {
+    align-items: flex-end;
+  }
+
+  .createButton {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .headerActions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .pageHeader {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .pageDescription,
+  .panelHeader p {
+    display: none;
+  }
+
+  .panelHeader {
+    padding: 10px 10px 8px;
+  }
+}

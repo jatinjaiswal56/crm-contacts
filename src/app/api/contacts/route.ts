@@ -1,10 +1,12 @@
 import {
-  conflictResponse,
+  duplicateContactResponse,
   internalServerErrorResponse,
+  isUniqueConstraintViolation,
   validationErrorResponse,
 } from "@/lib/api/responses";
 import { parseJsonBody } from "@/lib/api/request";
 import { getContact, listContacts } from "@/lib/contacts/service";
+import { toContactWriteValues } from "@/lib/contacts/normalize";
 import { createContact } from "@/lib/contacts/repository";
 import {
   contactWriteFieldsSchema,
@@ -36,37 +38,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await createContact({
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      email: parsed.data.email ?? null,
-      phone: `+91 ${parsed.data.phone}`,
-      company: parsed.data.company ?? null,
-    });
+    const result = await createContact(toContactWriteValues(parsed.data));
 
     if (result.kind === "duplicate") {
-      return conflictResponse(
-        "DUPLICATE_CONTACT",
-        result.field === "email"
-          ? "A contact with this email already exists."
-          : "A contact with this phone number already exists.",
-      );
+      return duplicateContactResponse(result.field);
     }
 
     const item = await getContact(result.contact.id);
     return Response.json({ item }, { status: 201 });
   } catch (error) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "23505"
-    ) {
-      return conflictResponse(
-        "DUPLICATE_CONTACT",
-        "A contact with this email or phone number already exists.",
-      );
-    }
+    if (isUniqueConstraintViolation(error)) return duplicateContactResponse();
     return internalServerErrorResponse("POST /api/contacts", error);
   }
 }

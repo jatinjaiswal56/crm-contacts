@@ -1,0 +1,11 @@
+# Never upload local data, secrets or build output to Vercel
+.env*
+!.env.example
+data/
+.next/
+node_modules/
+crm-contacts-app/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store

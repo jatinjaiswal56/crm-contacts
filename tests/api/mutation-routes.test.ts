@@ -1,17 +1,19 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { POST as createContact } from "../src/app/api/contacts/route";
-import { PATCH as updateContact } from "../src/app/api/contacts/[id]/route";
-import { PUT as replaceTags } from "../src/app/api/contacts/[id]/tags/route";
-import { db, pool } from "../src/lib/db/client";
-import { contactActivities, contacts, tags } from "../src/lib/db/schema";
+import { POST as createContact } from "../../src/app/api/contacts/route";
+import { PATCH as updateContact } from "../../src/app/api/contacts/[id]/route";
+import { PUT as replaceTags } from "../../src/app/api/contacts/[id]/tags/route";
+import { getDb, getPool } from "../../src/lib/db/client";
+import { contactActivities, contacts, tags } from "../../src/lib/db/schema";
 
 const uniqueEmail = "mutation-test@example.com";
 // Test phones use the 70000000xx range; the seed uses 98765xxxxx, so a
 // freshly seeded database (CI) has no duplicates with these contacts.
 const secondUniqueEmail = "mutation-second@example.com";
+const concurrentUniqueEmail = "mutation-concurrent@example.com";
 let createdId: string | null = null;
 let secondCreatedId: string | null = null;
+let concurrentCreatedId: string | null = null;
 
 const routeContext = (id: string) => ({ params: Promise.resolve({ id }) });
 const jsonRequest = (url: string, method: string, body: unknown) =>
@@ -30,12 +32,15 @@ const malformedJsonRequest = (url: string, method: string) =>
 describe("contact mutation routes", () => {
   afterAll(async () => {
     if (createdId) {
-      await db.delete(contacts).where(eq(contacts.id, createdId));
+      await getDb().delete(contacts).where(eq(contacts.id, createdId));
     }
     if (secondCreatedId) {
-      await db.delete(contacts).where(eq(contacts.id, secondCreatedId));
+      await getDb().delete(contacts).where(eq(contacts.id, secondCreatedId));
     }
-    await pool.end();
+    if (concurrentCreatedId) {
+      await getDb().delete(contacts).where(eq(contacts.id, concurrentCreatedId));
+    }
+    await getPool().end();
   });
 
   it("returns INVALID_JSON for malformed contact and tag mutation bodies", async () => {
@@ -64,8 +69,8 @@ describe("contact mutation routes", () => {
   });
 
   it("creates contacts and rejects duplicate normalized emails and phone numbers", async () => {
-    await db.delete(contacts).where(eq(contacts.emailNormalized, uniqueEmail));
-    await db.delete(contacts).where(eq(contacts.emailNormalized, secondUniqueEmail));
+    await getDb().delete(contacts).where(eq(contacts.emailNormalized, uniqueEmail));
+    await getDb().delete(contacts).where(eq(contacts.emailNormalized, secondUniqueEmail));
 
     const invalid = await createContact(
       jsonRequest("/api/contacts", "POST", {
@@ -102,7 +107,7 @@ describe("contact mutation routes", () => {
     expect(created.status).toBe(201);
     expect(createdBody.item.phone).toBe("+91 7000000010");
     createdId = createdBody.item.id;
-    const creationActivities = await db
+    const creationActivities = await getDb()
       .select()
       .from(contactActivities)
       .where(eq(contactActivities.contactId, createdId));
@@ -183,7 +188,7 @@ describe("contact mutation routes", () => {
     expect(firstUpdate.status).toBe(200);
     const firstUpdateBody = await firstUpdate.json();
     expect(firstUpdateBody.item.tags).toEqual([]);
-    const updateActivities = await db
+    const updateActivities = await getDb()
       .select()
       .from(contactActivities)
       .where(eq(contactActivities.contactId, createdId!));
@@ -214,9 +219,56 @@ describe("contact mutation routes", () => {
     expect(conflictBody.latest.version).toBe(2);
   });
 
+  it("allows only one concurrent update for the same contact version", async () => {
+    await getDb()
+      .delete(contacts)
+      .where(eq(contacts.emailNormalized, concurrentUniqueEmail));
+
+    const created = await createContact(
+      jsonRequest("/api/contacts", "POST", {
+        firstName: "Concurrent",
+        lastName: "Tester",
+        email: concurrentUniqueEmail,
+        phone: "7000000013",
+        company: "Test Works",
+      }),
+    );
+    expect(created.status).toBe(201);
+    const createdBody = (await created.json()) as { item: { id: string } };
+    const contactId = createdBody.item.id;
+    concurrentCreatedId = contactId;
+
+    const makeUpdate = (lastName: string) =>
+      updateContact(
+        jsonRequest(`/api/contacts/${contactId}`, "PATCH", {
+          firstName: "Concurrent",
+          lastName,
+          email: concurrentUniqueEmail,
+          phone: "7000000013",
+          company: "Test Works",
+          expectedVersion: 1,
+        }),
+        routeContext(contactId),
+      );
+
+    // PGlite may serialize local transactions; CI's PostgreSQL service exercises true contention.
+    const responses = await Promise.all([
+      makeUpdate("First"),
+      makeUpdate("Second"),
+    ]);
+
+    expect(responses.map((response) => response.status).sort()).toEqual([
+      200,
+      409,
+    ]);
+    const conflict = responses.find((response) => response.status === 409);
+    expect(conflict).toBeDefined();
+    expect((await conflict!.json()).error.code).toBe("VERSION_CONFLICT");
+  });
+
   it("replaces tags transactionally", async () => {
     expect(createdId).not.toBeNull();
-    const availableTags = await db.select().from(tags).limit(2);
+    const availableTags = await getDb().select().from(tags).limit(2);
     expect(availableTags.length).toBeGreaterThan(0);
 
     const staleResponse = await replaceTags(
@@ -240,7 +292,7 @@ describe("contact mutation routes", () => {
     );
     expect(response.status).toBe(200);
     expect((await response.json()).item.version).toBe(3);
-    const addedActivities = await db
+    const addedActivities = await getDb()
       .select()
       .from(contactActivities)
       .where(eq(contactActivities.contactId, createdId!));
@@ -261,7 +313,7 @@ describe("contact mutation routes", () => {
     );
     expect(removedResponse.status).toBe(200);
     expect((await removedResponse.json()).item.version).toBe(4);
-    const removedActivities = await db
+    const removedActivities = await getDb()
       .select()
       .from(contactActivities)
       .where(eq(contactActivities.contactId, createdId!));
@@ -282,5 +334,18 @@ describe("contact mutation routes", () => {
     );
     expect(invalidTags.status).toBe(422);
     expect((await invalidTags.json()).error.code).toBe("INVALID_TAGS");
+  });
+
+  it("returns 404 when replacing tags for a missing contact", async () => {
+    const missingId = "00000000-0000-4000-8000-000000000098";
+    const response = await replaceTags(
+      jsonRequest(`/api/contacts/${missingId}/tags`, "PUT", {
+        tagIds: [],
+        expectedVersion: 1,
+      }),
+      routeContext(missingId),
+    );
+
+    expect(response.status).toBe(404);
   });
 });

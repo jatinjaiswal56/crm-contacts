@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   mergeContactDraft,
   mergeContactTagDraft,
-} from "../src/lib/contacts/conflict-merge";
+} from "../../src/lib/contacts/conflict-merge";
 
 describe("conflict draft merging", () => {
   it("preserves remote edits to untouched fields and reapplies only the user's changed fields", () => {

@@ -1,11 +1,14 @@
 import {
   conflictResponse,
+  duplicateContactResponse,
   internalServerErrorResponse,
+  isUniqueConstraintViolation,
   notFoundResponse,
   validationErrorResponse,
 } from "@/lib/api/responses";
 import { parseJsonBody } from "@/lib/api/request";
 import { getContact } from "@/lib/contacts/service";
+import { toContactWriteValues } from "@/lib/contacts/normalize";
 import { updateContact } from "@/lib/contacts/repository";
 import {
   contactIdSchema,
@@ -53,13 +56,11 @@ export async function PATCH(
   }
 
   try {
-    const result = await updateContact(parsedId.data, parsed.data.expectedVersion, {
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      email: parsed.data.email ?? null,
-      phone: `+91 ${parsed.data.phone}`,
-      company: parsed.data.company ?? null,
-    });
+    const result = await updateContact(
+      parsedId.data,
+      parsed.data.expectedVersion,
+      toContactWriteValues(parsed.data),
+    );
 
     if (result.kind === "missing") {
       return notFoundResponse("Contact");
@@ -74,12 +75,7 @@ export async function PATCH(
       );
     }
     if (result.kind === "duplicate") {
-      return conflictResponse(
-        "DUPLICATE_CONTACT",
-        result.field === "email"
-          ? "A contact with this email already exists."
-          : "A contact with this phone number already exists.",
-      );
+      return duplicateContactResponse(result.field);
     }
 
     const updatedContact = await getContact(parsedId.data);
@@ -87,17 +83,7 @@ export async function PATCH(
 
     return Response.json({ item: updatedContact });
   } catch (error) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "23505"
-    ) {
-      return conflictResponse(
-        "DUPLICATE_CONTACT",
-        "A contact with this email or phone number already exists.",
-      );
-    }
+    if (isUniqueConstraintViolation(error)) return duplicateContactResponse();
     return internalServerErrorResponse("PATCH /api/contacts/[id]", error);
   }
 }

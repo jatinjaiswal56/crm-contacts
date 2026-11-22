@@ -1,0 +1,123 @@
+.workspace {
+  display: flex;
+  width: min(1240px, calc(100% - 48px));
+  height: 100dvh;
+  min-height: 0;
+  flex-direction: column;
+  margin: 0 auto;
+  overflow: hidden;
+  padding: 22px 0 16px;
+}
+
+.topbar {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.brandLockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.brandMark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 9px;
+  color: #fff;
+  background: #315be8;
+  font-size: 15px;
+}
+
+.brandDivider {
+  padding: 0 5px;
+  color: #a4adbc;
+  font-weight: 400;
+}
+
+.workspace > main {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.panel {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e6eaf0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 14px 40px rgb(25 42 70 / 5%);
+}
+
+.errorBanner {
+  margin: 16px 24px 0;
+  padding: 11px 13px;
+  border: 1px solid #f1d0d0;
+  border-radius: 9px;
+  color: #8a3333;
+  background: #fff7f7;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.errorBanner strong {
+  font-weight: 700;
+}
+
+@media (max-width: 740px) {
+  .workspace {
+    width: min(100% - 28px, 1240px);
+    padding-top: 15px;
+  }
+
+  .topbar {
+    margin-bottom: 32px;
+  }
+
+  .errorBanner {
+    margin-right: 16px;
+    margin-left: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace {
+    width: calc(100% - 22px);
+  }
+
+  .topbar {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .brandLockup {
+    gap: 7px;
+    font-size: 13px;
+  }
+
+  .brandMark {
+    width: 29px;
+    height: 29px;
+  }
+}
+
+@media (max-width: 360px) {
+  .topbar {
+    margin-bottom: 12px;
+  }
+}
